@@ -395,9 +395,6 @@ export class BasicCommands {
     return { shouldExecute: true };
   }
 
-  /**
-   * Creates an embed for track information
-   */
   private createTrackEmbed(track: Track, title: string, color: string = '#00ff00'): EmbedBuilder {
     const embed = new EmbedBuilder()
       .setColor(color)

@@ -6,7 +6,6 @@
 
 /// <reference types="node" />
 
-// Ensure Node.js globals are available
 declare const process: NodeJS.Process;
 declare const console: Console;
 
