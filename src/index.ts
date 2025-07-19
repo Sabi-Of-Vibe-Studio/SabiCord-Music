@@ -2,8 +2,7 @@
  * MIT License
  * 
  * Copyright (c) 2025 NirrussVn0
- * 
- * Vocard - A modern TypeScript Discord music bot with Lavalink integration
+
  */
 
 import { VocardClient } from '@core/Client';
