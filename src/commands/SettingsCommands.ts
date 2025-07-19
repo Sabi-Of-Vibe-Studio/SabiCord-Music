@@ -35,20 +35,12 @@ export class SettingsCommands {
       type: ApplicationCommandOptionType.String,
       maxLength: 5,
     })
-    prefix?: string,
+    prefix: string | undefined,
     interaction: CommandInteraction
   ): Promise<void> {
-    if (!interaction.guild) {
-      await interaction.reply({ content: '❌ This command can only be used in servers!', ephemeral: true });
-      return;
-    }
-
-    const member = interaction.guild.members.cache.get(interaction.user.id);
-    if (!member?.permissions.has(PermissionFlagsBits.ManageGuild)) {
-      await interaction.reply({ 
-        content: '❌ You need the "Manage Server" permission to change settings!', 
-        ephemeral: true 
-      });
+    const validation = await this.validateGuildAndPermissions(interaction);
+    if (!validation.isValid) {
+      await interaction.reply({ content: validation.errorMessage!, ephemeral: true });
       return;
     }
 
@@ -104,8 +96,8 @@ export class SettingsCommands {
         { name: 'Ukrainian', value: 'UA' },
       ],
     })
-    language?: string,
-    interaction: CommandInteraction
+    interaction: CommandInteraction,
+    language?: string
   ): Promise<void> {
     if (!interaction.guild) {
       await interaction.reply({ content: '❌ This command can only be used in servers!', ephemeral: true });
@@ -440,5 +432,50 @@ export class SettingsCommands {
     if (secs > 0) parts.push(`${secs}s`);
 
     return parts.join(' ') || '0s';
+  }
+
+  /**
+   * Validates guild context and user permissions for settings commands
+   */
+  private async validateGuildAndPermissions(interaction: CommandInteraction): Promise<{ isValid: boolean; errorMessage?: string }> {
+    if (!interaction.guild) {
+      return { isValid: false, errorMessage: '❌ This command can only be used in servers!' };
+    }
+
+    const member = interaction.guild.members.cache.get(interaction.user.id);
+    if (!member?.permissions.has(PermissionFlagsBits.ManageGuild)) {
+      return {
+        isValid: false,
+        errorMessage: '❌ You need the "Manage Server" permission to change settings!'
+      };
+    }
+
+    return { isValid: true };
+  }
+
+  /**
+   * Validates guild context only (for read-only commands)
+   */
+  private async validateGuildOnly(interaction: CommandInteraction): Promise<{ isValid: boolean; errorMessage?: string }> {
+    if (!interaction.guild) {
+      return { isValid: false, errorMessage: '❌ This command can only be used in servers!' };
+    }
+
+    return { isValid: true };
+  }
+
+  /**
+   * Handles common error responses for settings commands
+   */
+  private async handleSettingsError(interaction: CommandInteraction, message: string): Promise<void> {
+    try {
+      if (interaction.deferred) {
+        await interaction.editReply({ content: message });
+      } else {
+        await interaction.reply({ content: message, ephemeral: true });
+      }
+    } catch (error) {
+      logger.error('Error handling settings command error', error as Error, 'SettingsCommands');
+    }
   }
 }

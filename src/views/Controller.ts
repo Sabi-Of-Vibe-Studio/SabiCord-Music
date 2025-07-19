@@ -41,7 +41,7 @@ export class MusicController {
     this.channel = options.channel;
     this.settings = container.resolve<Settings>('Settings');
     
-    // Set up event listeners
+    //event listeners
     this.setupEventListeners();
   }
 
@@ -55,10 +55,8 @@ export class MusicController {
         components,
       });
 
-      // Set up button interaction collector
       this.setupInteractionCollector();
       
-      // Start update interval
       this.startUpdateInterval();
 
       return this.message;
@@ -465,7 +463,6 @@ export class MusicController {
   }
 
   private async handleQueue(interaction: ButtonInteraction): Promise<void> {
-    // This would open a queue view - implement separately
     await interaction.reply({
       content: '📋 Queue view coming soon!',
       ephemeral: true,
@@ -473,7 +470,6 @@ export class MusicController {
   }
 
   private async handlePrevious(interaction: ButtonInteraction): Promise<void> {
-    // Implement previous track logic
     await interaction.reply({
       content: '⏮️ Previous track functionality coming soon!',
       ephemeral: true,
@@ -547,6 +543,6 @@ export class MusicController {
       if (this.player.isPlaying && this.player.current) {
         this.update();
       }
-    }, 10000); // Update every 10 seconds
+    }, 10000); // 10 seconds
   }
 }

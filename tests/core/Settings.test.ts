@@ -7,7 +7,6 @@
 import { Settings } from '@core/Settings';
 import { readFileSync, existsSync } from 'fs';
 
-// Mock fs module
 jest.mock('fs');
 const mockReadFileSync = readFileSync as jest.MockedFunction<typeof readFileSync>;
 const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
@@ -15,7 +14,7 @@ const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
 describe('Settings', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Reset environment variables
+
     delete process.env.DISCORD_TOKEN;
     delete process.env.DISCORD_CLIENT_ID;
     delete process.env.MONGODB_URL;
@@ -23,7 +22,7 @@ describe('Settings', () => {
   });
 
   afterEach(() => {
-    // Restore test environment
+
     process.env.DISCORD_TOKEN = 'test-token';
     process.env.DISCORD_CLIENT_ID = 'test-client-id';
     process.env.MONGODB_URL = 'mongodb://localhost:27017';
@@ -107,7 +106,6 @@ describe('Settings', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue('invalid json');
 
-      // Should not throw, should fall back to environment variables
       const settings = new Settings();
 
       expect(settings.token).toBe('env-token');
