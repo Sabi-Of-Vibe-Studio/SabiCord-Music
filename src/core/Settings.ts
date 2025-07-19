@@ -1,3 +1,5 @@
+// import { Settings } from '@core/Settings';
+// import { statement } from './../../node_modules/@types/babel__template/index.d';
 /**
  * MIT License
  * 
@@ -11,27 +13,26 @@ import { ISettings, INodeConfig, IActivityConfig, ILoggingConfig, IIPCConfig, IC
 
 // Load environment variables
 config();
-
 export class Settings implements ISettings {
-  public readonly token: string;
-  public readonly client_id: string;
-  public readonly genius_token?: string;
-  public readonly mongodb_url: string;
-  public readonly mongodb_name: string;
-  public readonly nodes: Record<string, INodeConfig>;
-  public readonly prefix: string;
-  public readonly activity: IActivityConfig[];
-  public readonly logging: ILoggingConfig;
-  public readonly bot_access_user: string[];
-  public readonly embed_color: string;
-  public readonly default_max_queue: number;
-  public readonly lyrics_platform: string;
-  public readonly ipc_client: IIPCConfig;
-  public readonly sources_settings: Record<string, any>;
-  public readonly default_controller: IControllerConfig;
-  public readonly default_voice_status_template: string;
-  public readonly cooldowns: Record<string, [number, number]>;
-  public readonly aliases: Record<string, string[]>;
+  public token: string = process.env.DISCORD_TOKEN || '?';
+  public client_id: string = process.env.DISCORD_CLIENT_ID || '?';
+  public genius_token?: string;
+  public mongodb_url: string = process.env.MONGODB_URL || '?' ;
+  public mongodb_name: string = process.env.MONGODB_NAME || '?';
+  public nodes: Record<string, INodeConfig> = {};
+  public prefix: string = process.env.BOT_PREFIX || '?';
+  public activity: IActivityConfig[] = this.getDefaultActivity();
+  public logging: ILoggingConfig = this.getDefaultLogging();
+  public bot_access_user: string[] = [];
+  public embed_color: string = process.env.EMBED_COLOR || '0xb3b3b3';
+  public default_max_queue: number = parseInt(process.env.MAX_QUEUE_SIZE || '1000');
+  public lyrics_platform: string = process.env.LYRICS_PLATFORM || 'lrclib';
+  public ipc_client: IIPCConfig = this.getDefaultIPC();
+  public sources_settings: Record<string, any> = this.getDefaultSources();
+  public default_controller: IControllerConfig = this.getDefaultController();
+  public default_voice_status_template: string = this.getDefaultVoiceStatusTemplate();
+  public cooldowns: Record<string, [number, number]> = {};
+  public aliases: Record<string, string[]> = {};
   public version?: string;
 
   constructor() {
@@ -40,7 +41,7 @@ export class Settings implements ISettings {
     this.initializeRequiredSettings(fileSettings);
     this.initializeOptionalSettings(fileSettings);
     this.initializeComplexSettings(fileSettings);
-
+    // add file contructor
     this.validate();
   }
 
@@ -213,14 +214,5 @@ export class Settings implements ISettings {
       ],
       disableButtonText: false,
     };
-  }
-
-  public validate(): void {
-    const required = ['token', 'client_id', 'mongodb_url', 'mongodb_name'];
-    const missing = required.filter(key => !this[key as keyof this]);
-    
-    if (missing.length > 0) {
-      throw new Error(`Missing required settings: ${missing.join(', ')}`);
-    }
   }
 }

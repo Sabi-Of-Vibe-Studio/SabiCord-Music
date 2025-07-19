@@ -62,7 +62,7 @@ export class Logger {
           format: winston.format.combine(
             winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
             winston.format.printf(({ timestamp, level, message, service }) => {
-              const serviceLabel = service ? `[${service.toUpperCase()}]` : '';
+              const serviceLabel = service ? `[${service}.toUpperCase()]` : '';
               return `${timestamp} [${level.toUpperCase()}]${serviceLabel}: ${message}`;
             })
           ),
