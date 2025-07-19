@@ -8,27 +8,28 @@ import 'reflect-metadata';
 import { Client, GatewayIntentBits, ActivityType, Message, Guild, Interaction } from 'discord.js';
 import { DIService, MetadataStorage, Client as DiscordXClient } from 'Discordx';
 import { container } from 'tsyringe';
-import { Settings } from './Settings';
+import { Settings} from './Settings';
 import { Database } from './Database';
 import { Logger, logger } from './Logger';
 import { Utils } from './Utils';
 import { ISettings } from '@interfaces/ISettings';
 
 export class VocardClient extends DiscordXClient {
-  private settings: Settings;
-  private database: Database;
-  private logger: Logger;
+  public static settings: Settings ;
+  public static database: Database ;
+  public static logger: Logger;
 
   constructor() {
+    // Call the parent constructor with the specified intents and settings
     super({
       intents: [
-        GatewayIntentBits.Guilds,
+        GatewayIntentBits.Guilds, // Intents for guilds
         GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.GuildVoiceStates,
+        GatewayIntentBits.GuildVoiceStates, // Intents for guild voice states
         GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.GuildMembers, // Intents for guild members
       ],
-      silent: false,
+      silent: false, // Set to false to enable logging
       simpleCommand: {
         prefix: '?', // Will be updated from settings
       },
@@ -40,19 +41,19 @@ export class VocardClient extends DiscordXClient {
   private initializeServices(): void {
     try {
       // Initialize settings
-      this.settings = new Settings();
-      this.settings.validate();
+      VocardClient.settings = new Settings();
+      VocardClient.settings.validate();
 
       // Initialize logger
-      this.logger = Logger.getInstance(this.settings.logging);
+      VocardClient.logger = Logger.getInstance(VocardClient.settings.logging);
 
       // Initialize database
-      this.database = new Database(this.settings.mongodb_url, this.settings.mongodb_name);
+      VocardClient.database = new Database(VocardClient.settings.mongodb_url, VocardClient.settings.mongodb_name);
 
       // Register services in DI container
-      container.registerInstance('Settings', this.settings);
-      container.registerInstance('Database', this.database);
-      container.registerInstance('Logger', this.logger);
+      container.registerInstance('Settings', VocardClient.settings);
+      container.registerInstance('Database', VocardClient.database);
+      container.registerInstance('Logger', VocardClient.logger);
       container.registerInstance('Client', this);
 
       logger.info('Services initialized successfully', 'client');
@@ -65,7 +66,7 @@ export class VocardClient extends DiscordXClient {
   public async start(): Promise<void> {
     try {
       // Connect to database
-      await this.database.initialize();
+      await VocardClient.database.initialize();
       logger.info('Database connected successfully', 'client');
 
       // Set up event handlers
@@ -75,7 +76,7 @@ export class VocardClient extends DiscordXClient {
       await this.importCommands();
 
       // Login to Discord
-      await this.login(this.settings.token);
+      await this.login(VocardClient.settings.token);
       
       logger.info('Bot started successfully', 'client');
     } catch (error) {
@@ -117,8 +118,8 @@ export class VocardClient extends DiscordXClient {
     logger.info('------------------', 'client');
 
     // Set activity
-    if (this.settings.activity.length > 0) {
-      const activity = this.settings.activity[0]
+    if (VocardClient.settings.activity.length > 0) {
+      const activity = VocardClient.settings.activity[0]
       if (activity) { 
         this.user.setActivity(activity.name, {
           type: this.getActivityType(activity.type)
@@ -135,7 +136,7 @@ export class VocardClient extends DiscordXClient {
     logger.info('Application commands synchronized', 'client');
 
     // Update settings with client ID
-    const settings = await this.database.settings.getSettings(this.user.id);
+    const settings = await VocardClient.database.settings.getSettings(this.user.id);
     //this.settings.client_id = this.user.id;
     settings.client_id = this.user.id;
   }
@@ -146,15 +147,15 @@ export class VocardClient extends DiscordXClient {
 
     // Check if bot is mentioned
     if (this.user && message.mentions.has(this.user) && !message.mentions.everyone) {
-      const settings = await this.database.settings.getSettings(message.guild.id);
-      const prefix = settings.prefix || this.settings.prefix;
+      const settings = await VocardClient.database.settings.getSettings(message.guild.id);
+      const prefix = settings.prefix || VocardClient.settings.prefix;
       await message.reply(`My prefix is \`${prefix}\``);
       return;
     }
 
     // Check for music request channel
     // const guildSettings = await this.database.settings.getSettings(message.guild.id);
-    const guildSettings = await this.database.settings.getSettings(message.guild.id);
+    const guildSettings = await VocardClient.database.settings.getSettings(message.guild.id);
     if (guildSettings.music_request_channel?.text_channel_id?.toString() === message.channel.id) {
       await this.handleMusicRequest(message);
       return;
@@ -175,7 +176,7 @@ export class VocardClient extends DiscordXClient {
   private async onGuildJoin(guild: Guild): Promise<void> {
     logger.info(`Joined guild: ${guild.name} (${guild.id})`, 'client');
     // Create default settings for the guild
-    await this.database.settings.createDefaultSettings(guild.id);
+    await VocardClient.database.settings.createDefaultSettings(guild.id);
   }
 
   private async onGuildLeave(guild: Guild): Promise<void> {
@@ -241,7 +242,7 @@ export class VocardClient extends DiscordXClient {
     logger.info('Shutting down bot...', 'client');
     
     try {
-      await this.database.close();
+      await VocardClient.database.close();
       await this.destroy();
       logger.info('Bot shutdown complete', 'client');
     } catch (error) {
@@ -251,15 +252,15 @@ export class VocardClient extends DiscordXClient {
 
   // Getters for services
   public getSettings(): Settings {
-    return this.settings;
+    return VocardClient.settings;
   }
 
   public getDatabase(): Database {
-    return this.database;
+    return VocardClient.database;
   }
 
   public getLogger(): Logger {
-    return this.logger;
+    return VocardClient.logger;
   }
 }
 
