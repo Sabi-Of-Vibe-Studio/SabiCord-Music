@@ -33,11 +33,14 @@ class CacheManager<T> implements ICacheManager<T> {
 
   set(key: string, value: T, ttl?: number): void {
     const expires = ttl ? Date.now() + ttl * 1000 : undefined;
-    this.cache.set(key, { value, expires });
+    this.cache.set(key, expires ? { value, expires } : { value }); // Store value with optional expiration
+    // this.cache.set(key, { value, expires }); // old code
   }
 
+//This function deletes a key from the cache and returns a boolean value indicating whether the deletion was successful
   delete(key: string): boolean {
     return this.cache.delete(key);
+    //Return the result of the delete method
   }
 
   clear(): void {
@@ -158,13 +161,17 @@ class GuildSettingsRepository implements IGuildSettingsRepository {
     let settings = this.cache.get(cacheKey);
     
     if (!settings) {
-      settings = await this.findOne({ _id: parseInt(guildId) });
+      const settings = await this.findOne({ _id: parseInt(guildId) });
       if (!settings) {
-        settings = await this.createDefaultSettings(guildId);
+        const settings = await this.createDefaultSettings(guildId);
+        this.cache.set(cacheKey, settings, 300); // Cache for 5 minutes
+        return settings;
       }
-      this.cache.set(cacheKey, settings, 300); // Cache for 5 minutes
     }
-    
+    if (!settings || !settings._id) {
+      throw new Error(`Settings not found for guild ID: ${guildId}`);
+    }
+    this.cache.set(cacheKey, settings, 300); // Cache for 5 minutes
     return settings;
   }
 
@@ -239,12 +246,17 @@ class UserRepository implements IUserRepository {
     let user = this.cache.get(cacheKey);
     
     if (!user) {
-      user = await this.findOne({ _id: parseInt(userId) });
+      const user = await this.findOne({ _id: parseInt(userId) });
       if (!user) {
-        user = await this.createDefaultUser(userId);
+        const user = await this.createDefaultUser(userId);
+        this.cache.set(cacheKey, user, 300);
+        return user;
       }
-      this.cache.set(cacheKey, user, 300); // Cache for 5 minutes
     }
+    if (!user || !user._id) {
+      throw new Error(`User not found for user ID: ${userId}`);
+    }
+    this.cache.set(cacheKey, user, 300);
     
     return user;
   }
@@ -296,9 +308,9 @@ class UserRepository implements IUserRepository {
 
 export class Database implements IDatabase {
   public connection: IDatabaseConnection;
-  public settings: IGuildSettingsRepository;
-  public users: IUserRepository;
-  private db: Db;
+  public settings!: IGuildSettingsRepository;
+  public users!: IUserRepository;
+  private db!: Db;
   private cache: IDatabaseCache;
 
   constructor(private url: string, private dbName: string) {
@@ -315,11 +327,24 @@ export class Database implements IDatabase {
 
   async initialize(): Promise<void> {
     await this.connection.connect();
+
+    const users = new CacheManager<IUserData>();
+    const settings = new CacheManager<IGuildSettings>();
+    this.cache = {
+      settings,
+      users,
+      clear: () => {
+        settings.clear();
+        users.clear();
+      },
+    };
+
     this.db = this.connection.client.db(this.dbName);
-    this.settings = new GuildSettingsRepository(this.db, this.cache.settings);
-    this.users = new UserRepository(this.db, this.cache.users);
+    this.settings = new GuildSettingsRepository(this.db, settings);
+    this.users = new UserRepository(this.db, users);
   }
 
+  // Asynchronously close the connection and clear the cache
   async close(): Promise<void> {
     this.cache.clear();
     await this.connection.disconnect();
