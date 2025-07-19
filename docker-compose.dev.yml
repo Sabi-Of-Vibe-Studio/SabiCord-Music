@@ -1,0 +1,85 @@
+# Development Docker Compose Configuration
+# This file is for development purposes only
+# Use: docker-compose -f docker-compose.dev.yml up
+
+name: vocard-dev
+services:
+    lavalink:
+        container_name: lavalink-dev
+        image: ghcr.io/lavalink-devs/lavalink:latest
+        restart: unless-stopped
+        environment:
+            - _JAVA_OPTIONS=-Xmx512M
+            - SERVER_PORT=2333
+            - LAVALINK_SERVER_PASSWORD=youshallnotpass
+        volumes:
+            - ./lavalink/application.yml:/opt/Lavalink/application.yml
+        networks:
+            - vocard-dev
+        ports:
+            - "2333:2333"
+        healthcheck:
+            test: nc -z -v localhost 2333
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    vocard-db-dev:
+       container_name: vocard-db-dev
+       image: mongo:8
+       restart: unless-stopped
+       volumes:
+           - vocard-dev-mongo:/data/db
+       environment:
+           - MONGO_INITDB_ROOT_USERNAME=admin
+           - MONGO_INITDB_ROOT_PASSWORD=admin
+       ports:
+           - "27017:27017"
+       networks:
+           - vocard-dev
+       command: ["mongod", "--oplogSize=128", "--wiredTigerCacheSizeGB=0.5", "--auth"]
+       healthcheck:
+            test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+
+    # Uncomment this section if you want to run the bot in development mode with Docker
+    # vocard-dev:
+    #     container_name: vocard-dev
+    #     build:
+    #         dockerfile: ./Dockerfile
+    #         target: builder
+    #     restart: unless-stopped
+    #     volumes:
+    #         - .:/app
+    #         - /app/node_modules
+    #         - ./logs:/app/logs
+    #     environment:
+    #         - NODE_ENV=development
+    #         - DISCORD_TOKEN=${DISCORD_TOKEN}
+    #         - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+    #         - MONGODB_URL=mongodb://admin:admin@vocard-db-dev:27017
+    #         - MONGODB_NAME=vocard_dev
+    #         - LAVALINK_HOST=lavalink
+    #         - LAVALINK_PORT=2333
+    #         - LAVALINK_PASSWORD=youshallnotpass
+    #         - LAVALINK_SECURE=false
+    #         - LOG_LEVEL=debug
+    #     networks:
+    #         - vocard-dev
+    #     depends_on:
+    #         lavalink:
+    #             condition: service_healthy
+    #         vocard-db-dev:
+    #             condition: service_healthy
+    #     command: ["npm", "run", "dev"]
+
+networks:
+    vocard-dev:
+        name: vocard-dev
+
+volumes:
+    vocard-dev-mongo:
+        name: vocard-dev-mongo
