@@ -5,8 +5,8 @@
  */
 
 import 'reflect-metadata';
-import { VocardClient } from '@core/Client';
-import { logger } from '@core/Logger';
+import { VocardClient } from './core/Client';
+import { logger } from './core/Logger';
 
 // Node.js globals - using dynamic imports to avoid TypeScript issues
 const nodeProcess = eval('process');

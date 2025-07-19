@@ -6,7 +6,7 @@
 
 import 'reflect-metadata';
 import { Client, GatewayIntentBits, ActivityType, Message, Guild, Interaction } from 'discord.js';
-import { DIService, MetadataStorage, Client as DiscordXClient } from '@discordx/discordx';
+import { DIService, MetadataStorage, Client as DiscordXClient } from 'Discordx';
 import { container } from 'tsyringe';
 import { Settings } from './Settings';
 import { Database } from './Database';
@@ -118,18 +118,26 @@ export class VocardClient extends DiscordXClient {
 
     // Set activity
     if (this.settings.activity.length > 0) {
-      const activity = this.settings.activity[0];
+      const activity = this.settings.activity[0]
+      if (activity) { 
+        this.user.setActivity(activity.name, {
+          type: this.getActivityType(activity.type)
+        })
+        ;
       this.user.setActivity(activity.name, { 
         type: this.getActivityType(activity.type) 
       });
     }
+  }
 
     // Sync slash commands
     await this.initApplicationCommands();
     logger.info('Application commands synchronized', 'client');
 
     // Update settings with client ID
-    this.settings.client_id = this.user.id;
+    const settings = await this.database.settings.getSettings(this.user.id);
+    //this.settings.client_id = this.user.id;
+    settings.client_id = this.user.id;
   }
 
   private async onMessage(message: Message): Promise<void> {
@@ -145,12 +153,13 @@ export class VocardClient extends DiscordXClient {
     }
 
     // Check for music request channel
+    // const guildSettings = await this.database.settings.getSettings(message.guild.id);
     const guildSettings = await this.database.settings.getSettings(message.guild.id);
-    if (guildSettings.music_request_channel?.text_channel_id === message.channel.id) {
+    if (guildSettings.music_request_channel?.text_channel_id?.toString() === message.channel.id) {
       await this.handleMusicRequest(message);
       return;
     }
-
+    
     // Process commands
     await this.executeCommand(message);
   }
@@ -188,7 +197,7 @@ export class VocardClient extends DiscordXClient {
       if (message.content) {
         const urls = Utils.extractUrls(message.content);
         if (urls.length > 0) {
-          query = urls[0];
+          query = query + urls[0];
         } else {
           query = message.content;
         }
