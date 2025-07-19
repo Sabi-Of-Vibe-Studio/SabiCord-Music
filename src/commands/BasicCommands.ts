@@ -4,16 +4,15 @@
  * Copyright (c) 2025 NirrussVn0
  */
 
-import { 
-  CommandInteraction, 
-  ApplicationCommandOptionType, 
+import {
+  CommandInteraction,
+  ApplicationCommandOptionType,
   EmbedBuilder,
-  User,
-  GuildMember 
+  User
 } from 'discord.js';
 import { Discord, Slash, SlashOption, SlashGroup } from '@discordx/discordx';
 import { injectable } from 'tsyringe';
-import { connectChannel, getPlayer, isUserInVoiceChannel, isUserPrivileged } from '@voicelink/index';
+import { connectChannel, getPlayer } from '@voicelink/index';
 import { Track, Playlist, SearchType, LoopType } from '@voicelink/index';
 import { Utils } from '@core/Utils';
 import { logger } from '@core/Logger';
@@ -46,7 +45,7 @@ export class BasicCommands {
       required: false,
       type: ApplicationCommandOptionType.String,
     })
-    end?: string,
+    end: string | undefined,
     interaction: CommandInteraction
   ): Promise<void> {
     if (!interaction.guild) {
@@ -137,20 +136,13 @@ export class BasicCommands {
 
   @Slash({ description: 'Pause the current track' })
   async pause(interaction: CommandInteraction): Promise<void> {
-    const player = getPlayer(interaction.guildId!);
-    
-    if (!player) {
-      await interaction.reply({ content: '❌ No music is currently playing!', ephemeral: true });
+    const validation = await this.validateMusicCommand(interaction);
+    if (!validation.isValid) {
+      await interaction.reply({ content: validation.errorMessage!, ephemeral: true });
       return;
     }
 
-    if (!player.isUserInChannel(interaction.user)) {
-      await interaction.reply({
-        content: `❌ You must be in ${player.channel} to use this command!`,
-        ephemeral: true,
-      });
-      return;
-    }
+    const player = getPlayer(interaction.guildId!)!;
 
     if (player.isPaused) {
       await interaction.reply({ content: '❌ The music is already paused!', ephemeral: true });
@@ -158,13 +150,9 @@ export class BasicCommands {
     }
 
     if (!player.isPrivileged(interaction.user)) {
-      player.pauseVotes.add(interaction.user);
-      const required = player.requiredVotes();
-      
-      if (player.pauseVotes.size < required) {
-        await interaction.reply({
-          content: `🗳️ Vote to pause registered! (${player.pauseVotes.size}/${required})`,
-        });
+      const voteResult = await this.handleVoting(player, interaction, 'pause');
+      if (!voteResult.shouldExecute) {
+        await interaction.reply({ content: voteResult.message! });
         return;
       }
     }
@@ -175,20 +163,13 @@ export class BasicCommands {
 
   @Slash({ description: 'Resume the current track' })
   async resume(interaction: CommandInteraction): Promise<void> {
-    const player = getPlayer(interaction.guildId!);
-    
-    if (!player) {
-      await interaction.reply({ content: '❌ No music is currently playing!', ephemeral: true });
+    const validation = await this.validateMusicCommand(interaction);
+    if (!validation.isValid) {
+      await interaction.reply({ content: validation.errorMessage!, ephemeral: true });
       return;
     }
 
-    if (!player.isUserInChannel(interaction.user)) {
-      await interaction.reply({
-        content: `❌ You must be in ${player.channel} to use this command!`,
-        ephemeral: true,
-      });
-      return;
-    }
+    const player = getPlayer(interaction.guildId!)!;
 
     if (!player.isPaused) {
       await interaction.reply({ content: '❌ The music is not paused!', ephemeral: true });
@@ -196,13 +177,9 @@ export class BasicCommands {
     }
 
     if (!player.isPrivileged(interaction.user)) {
-      player.resumeVotes.add(interaction.user);
-      const required = player.requiredVotes();
-      
-      if (player.resumeVotes.size < required) {
-        await interaction.reply({
-          content: `🗳️ Vote to resume registered! (${player.resumeVotes.size}/${required})`,
-        });
+      const voteResult = await this.handleVoting(player, interaction, 'resume');
+      if (!voteResult.shouldExecute) {
+        await interaction.reply({ content: voteResult.message! });
         return;
       }
     }
@@ -376,18 +353,100 @@ export class BasicCommands {
     await interaction.reply({ content: `🔊 Volume set to **${level}%**!` });
   }
 
-  private detectSearchType(query: string): SearchType {
-    if (Utils.isValidUrl(query)) {
-      if (query.includes('youtube.com') || query.includes('youtu.be')) {
-        return SearchType.YOUTUBE;
-      } else if (query.includes('soundcloud.com')) {
-        return SearchType.SOUNDCLOUD;
-      } else if (query.includes('spotify.com')) {
-        return SearchType.SPOTIFY;
-      }
-      // Add more URL detection as needed
+  /**
+   * Validates if the interaction can be processed for music commands
+   */
+  private async validateMusicCommand(interaction: CommandInteraction): Promise<{ isValid: boolean; errorMessage?: string }> {
+    if (!interaction.guild) {
+      return { isValid: false, errorMessage: '❌ This command can only be used in servers!' };
     }
-    
-    return SearchType.YOUTUBE; // Default to YouTube search
+
+    const player = getPlayer(interaction.guildId!);
+    if (!player) {
+      return { isValid: false, errorMessage: '❌ No music is currently playing!' };
+    }
+
+    if (!player.isUserInChannel(interaction.user)) {
+      return { isValid: false, errorMessage: '❌ You need to be in a voice channel to use this command!' };
+    }
+
+    return { isValid: true };
+  }
+
+  /**
+   * Handles voting logic for music commands
+   */
+  private async handleVoting(player: any, interaction: CommandInteraction, action: string): Promise<{ shouldExecute: boolean; message?: string }> {
+    const voteSet = action === 'pause' ? player.pauseVotes :
+                   action === 'resume' ? player.resumeVotes :
+                   action === 'skip' ? player.skipVotes :
+                   player.stopVotes;
+
+    voteSet.add(interaction.user);
+    const required = player.requiredVotes();
+
+    if (voteSet.size < required) {
+      return {
+        shouldExecute: false,
+        message: `🗳️ Vote to ${action} registered! (${voteSet.size}/${required})`
+      };
+    }
+
+    return { shouldExecute: true };
+  }
+
+  /**
+   * Creates an embed for track information
+   */
+  private createTrackEmbed(track: Track, title: string, color: string = '#00ff00'): EmbedBuilder {
+    const embed = new EmbedBuilder()
+      .setColor(color)
+      .setTitle(title)
+      .setDescription(`**[${track.title}](${track.uri})**`)
+      .addFields([
+        { name: 'Artist', value: track.author, inline: true },
+        { name: 'Duration', value: track.formattedLength, inline: true },
+        { name: 'Requested by', value: `${track.requester}`, inline: true },
+      ]);
+
+    if (track.thumbnail) {
+      embed.setThumbnail(track.thumbnail);
+    }
+
+    return embed;
+  }
+
+  /**
+   * Handles common error responses for commands
+   */
+  private async handleCommandError(interaction: CommandInteraction, message: string): Promise<void> {
+    if (interaction.deferred) {
+      await interaction.editReply({ content: message });
+    } else {
+      await interaction.reply({ content: message, ephemeral: true });
+    }
+  }
+
+  /**
+   * Detects the search type based on the query URL
+   */
+  private detectSearchType(query: string): SearchType {
+    if (!Utils.isValidUrl(query)) {
+      return SearchType.YOUTUBE;
+    }
+
+    const urlPatterns = {
+      [SearchType.YOUTUBE]: ['youtube.com', 'youtu.be'],
+      [SearchType.SOUNDCLOUD]: ['soundcloud.com'],
+      [SearchType.SPOTIFY]: ['spotify.com'],
+    };
+
+    for (const [searchType, patterns] of Object.entries(urlPatterns)) {
+      if (patterns.some(pattern => query.includes(pattern))) {
+        return searchType as SearchType;
+      }
+    }
+
+    return SearchType.YOUTUBE;
   }
 }
