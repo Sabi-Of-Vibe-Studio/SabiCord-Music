@@ -1,23 +1,28 @@
 /**
  * MIT License
- * 
+ *
  * Copyright (c) 2025 NirrussVn0
  */
-
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { ILoggingConfig } from '@interfaces/ISettings';
-
-export class Logger {
+export interface ILogger {
+  info(message: string, service?: string): void;
+  warn(message: string, service?: string): void;
+  error(message: string, error?: Error, service?: string): void;
+  debug(message: string, service?: string): void;
+}
+export interface ILoggerFactory {
+  createLogger(config: ILoggingConfig): ILogger;
+}
+export class Logger implements ILogger {
   private static instance: Logger;
   private logger: winston.Logger;
-
   private constructor(config: ILoggingConfig) {
     this.logger = this.createLogger(config);
   }
-
   public static getInstance(config?: ILoggingConfig): Logger {
     if (!Logger.instance) {
       if (!config) {
@@ -27,11 +32,8 @@ export class Logger {
     }
     return Logger.instance;
   }
-
   private createLogger(config: ILoggingConfig): winston.Logger {
     const transports: winston.transport[] = [];
-
-    // Console transport
     transports.push(
       new winston.transports.Console({
         format: winston.format.combine(
@@ -44,16 +46,11 @@ export class Logger {
         ),
       })
     );
-
-    // File transport
     if (config.file.enable) {
       const logPath = join(process.cwd(), config.file.path);
-      
-      // Ensure log directory exists
       if (!existsSync(logPath)) {
         mkdirSync(logPath, { recursive: true });
       }
-
       transports.push(
         new DailyRotateFile({
           filename: join(logPath, 'vocard-%DATE%.log'),
@@ -69,55 +66,47 @@ export class Logger {
         })
       );
     }
-
     return winston.createLogger({
       level: 'info',
       transports,
       exitOnError: false,
     });
   }
-
   public info(message: string, service?: string): void {
     this.logger.info(message, { service });
   }
-
   public warn(message: string, service?: string): void {
     this.logger.warn(message, { service });
   }
-
   public error(message: string, error?: Error, service?: string): void {
     const errorMessage = error ? `${message}: ${error.message}` : message;
     this.logger.error(errorMessage, { service, stack: error?.stack });
   }
-
   public debug(message: string, service?: string): void {
     this.logger.debug(message, { service });
   }
-
   public verbose(message: string, service?: string): void {
     this.logger.verbose(message, { service });
   }
-
   public setLevel(level: string, service?: string): void {
     if (service) {
-      // Set level for specific service
       this.logger.child({ service }).level = level;
     } else {
-      // Set global level
       this.logger.level = level;
     }
   }
-
   public child(service: string): winston.Logger {
     return this.logger.child({ service });
   }
-
   public getWinstonLogger(): winston.Logger {
     return this.logger;
   }
 }
-
-// Export a default logger instance that can be configured later
+export class LoggerFactory implements ILoggerFactory {
+  public createLogger(config: ILoggingConfig): ILogger {
+    return Logger.getInstance(config);
+  }
+}
 export const logger = {
   info: (message: string, service?: string) => Logger.getInstance().info(message, service),
   warn: (message: string, service?: string) => Logger.getInstance().warn(message, service),

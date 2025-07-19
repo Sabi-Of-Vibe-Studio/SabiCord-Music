@@ -3,24 +3,21 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-
 import { 
   CommandInteraction, 
   ApplicationCommandOptionType, 
   EmbedBuilder 
 } from 'discord.js';
-import { Discord, Slash, SlashOption, SlashGroup } from '@discordx/discordx';
+import { Discord, Slash, SlashOption, SlashGroup } from 'discordx';
 import { injectable } from 'tsyringe';
-import { getPlayer } from '@voicelink/index';
-import { Filters } from '@voicelink/index';
+import { getPlayer } from '@audio/index';
+import { Filters } from '@audio/index';
 import { logger } from '@core/Logger';
-
 @Discord()
 @SlashGroup({ description: 'Audio effect and filter commands', name: 'effects' })
 @SlashGroup('effects')
 @injectable()
 export class EffectCommands {
-
   @Slash({ description: 'Apply bass boost effect' })
   async bassboost(
     @SlashOption({
@@ -35,12 +32,10 @@ export class EffectCommands {
     interaction: CommandInteraction
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -48,7 +43,6 @@ export class EffectCommands {
       });
       return;
     }
-
     if (!player.isPrivileged(interaction.user)) {
       await interaction.reply({
         content: '❌ You need DJ permissions to apply effects!',
@@ -56,11 +50,9 @@ export class EffectCommands {
       });
       return;
     }
-
     try {
       const filters = Filters.createBassBoost(level);
       await player.setFilters(filters);
-      
       await interaction.reply({ 
         content: `🎵 Bass boost effect applied! (Level: ${level})` 
       });
@@ -72,7 +64,6 @@ export class EffectCommands {
       });
     }
   }
-
   @Slash({ description: 'Apply nightcore effect' })
   async nightcore(
     @SlashOption({
@@ -96,12 +87,10 @@ export class EffectCommands {
     interaction: CommandInteraction
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -109,7 +98,6 @@ export class EffectCommands {
       });
       return;
     }
-
     if (!player.isPrivileged(interaction.user)) {
       await interaction.reply({
         content: '❌ You need DJ permissions to apply effects!',
@@ -117,11 +105,9 @@ export class EffectCommands {
       });
       return;
     }
-
     try {
       const filters = Filters.createNightcore(speed, pitch);
       await player.setFilters(filters);
-      
       await interaction.reply({ 
         content: `🎵 Nightcore effect applied! (Speed: ${speed}x, Pitch: ${pitch}x)` 
       });
@@ -133,7 +119,6 @@ export class EffectCommands {
       });
     }
   }
-
   @Slash({ description: 'Apply vaporwave effect' })
   async vaporwave(
     @SlashOption({
@@ -157,12 +142,10 @@ export class EffectCommands {
     interaction: CommandInteraction
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -170,7 +153,6 @@ export class EffectCommands {
       });
       return;
     }
-
     if (!player.isPrivileged(interaction.user)) {
       await interaction.reply({
         content: '❌ You need DJ permissions to apply effects!',
@@ -178,11 +160,9 @@ export class EffectCommands {
       });
       return;
     }
-
     try {
       const filters = Filters.createVaporwave(speed, pitch);
       await player.setFilters(filters);
-      
       await interaction.reply({ 
         content: `🎵 Vaporwave effect applied! (Speed: ${speed}x, Pitch: ${pitch}x)` 
       });
@@ -194,7 +174,6 @@ export class EffectCommands {
       });
     }
   }
-
   @Slash({ description: 'Apply 8D audio effect' })
   async eightd(
     @SlashOption({
@@ -209,12 +188,10 @@ export class EffectCommands {
     interaction: CommandInteraction
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -222,7 +199,6 @@ export class EffectCommands {
       });
       return;
     }
-
     if (!player.isPrivileged(interaction.user)) {
       await interaction.reply({
         content: '❌ You need DJ permissions to apply effects!',
@@ -230,11 +206,9 @@ export class EffectCommands {
       });
       return;
     }
-
     try {
       const filters = Filters.create8D(speed);
       await player.setFilters(filters);
-      
       await interaction.reply({ 
         content: `🎵 8D audio effect applied! (Rotation speed: ${speed}Hz)` 
       });
@@ -246,7 +220,6 @@ export class EffectCommands {
       });
     }
   }
-
   @Slash({ description: 'Apply karaoke effect (remove vocals)' })
   async karaoke(
     @SlashOption({
@@ -261,12 +234,10 @@ export class EffectCommands {
     interaction: CommandInteraction
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -274,7 +245,6 @@ export class EffectCommands {
       });
       return;
     }
-
     if (!player.isPrivileged(interaction.user)) {
       await interaction.reply({
         content: '❌ You need DJ permissions to apply effects!',
@@ -282,12 +252,10 @@ export class EffectCommands {
       });
       return;
     }
-
     try {
       const filters = new Filters();
       filters.setKaraoke({ level, monoLevel: 1.0, filterBand: 220.0, filterWidth: 100.0 });
       await player.setFilters(filters);
-      
       await interaction.reply({ 
         content: `🎵 Karaoke effect applied! (Level: ${level})` 
       });
@@ -299,7 +267,6 @@ export class EffectCommands {
       });
     }
   }
-
   @Slash({ description: 'Apply tremolo effect' })
   async tremolo(
     @SlashOption({
@@ -323,12 +290,10 @@ export class EffectCommands {
     interaction: CommandInteraction
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -336,7 +301,6 @@ export class EffectCommands {
       });
       return;
     }
-
     if (!player.isPrivileged(interaction.user)) {
       await interaction.reply({
         content: '❌ You need DJ permissions to apply effects!',
@@ -344,12 +308,10 @@ export class EffectCommands {
       });
       return;
     }
-
     try {
       const filters = new Filters();
       filters.setTremolo({ frequency, depth });
       await player.setFilters(filters);
-      
       await interaction.reply({ 
         content: `🎵 Tremolo effect applied! (Frequency: ${frequency}Hz, Depth: ${depth})` 
       });
@@ -361,16 +323,13 @@ export class EffectCommands {
       });
     }
   }
-
   @Slash({ description: 'Clear all audio effects' })
   async clear(interaction: CommandInteraction): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -378,7 +337,6 @@ export class EffectCommands {
       });
       return;
     }
-
     if (!player.isPrivileged(interaction.user)) {
       await interaction.reply({
         content: '❌ You need DJ permissions to clear effects!',
@@ -386,11 +344,9 @@ export class EffectCommands {
       });
       return;
     }
-
     try {
       const filters = new Filters();
       await player.setFilters(filters);
-      
       await interaction.reply({ content: '🎵 All audio effects cleared!' });
     } catch (error) {
       logger.error('Error clearing effects', error as Error, 'commands');
@@ -400,24 +356,19 @@ export class EffectCommands {
       });
     }
   }
-
   @Slash({ description: 'Show current audio effects' })
   async status(interaction: CommandInteraction): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     const filters = player.filters;
     const activeFilters = filters.getAll();
-
     if (activeFilters.length === 0) {
       await interaction.reply({ content: '🎵 No audio effects are currently active.' });
       return;
     }
-
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
       .setTitle('🎵 Active Audio Effects')
@@ -427,7 +378,6 @@ export class EffectCommands {
           .join('\n')
       )
       .setFooter({ text: `${activeFilters.length} effect(s) active` });
-
     await interaction.reply({ embeds: [embed] });
   }
 }

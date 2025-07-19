@@ -1,17 +1,12 @@
-// import { Settings } from '@core/Settings';
-// import { statement } from './../../node_modules/@types/babel__template/index.d';
 /**
  * MIT License
- * 
+ *
  * Copyright (c) 2025 NirrussVn0
  */
-
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { config } from 'dotenv';
 import { ISettings, INodeConfig, IActivityConfig, ILoggingConfig, IIPCConfig, IControllerConfig } from '@interfaces/ISettings';
-
-// Load environment variables
 config();
 export class Settings implements ISettings {
   public token: string = process.env.DISCORD_TOKEN || '?';
@@ -34,27 +29,18 @@ export class Settings implements ISettings {
   public cooldowns: Record<string, [number, number]> = {};
   public aliases: Record<string, string[]> = {};
   public version?: string;
-
   constructor() {
     const fileSettings = this.loadFileSettings();
-
     this.initializeRequiredSettings(fileSettings);
     this.initializeOptionalSettings(fileSettings);
     this.initializeComplexSettings(fileSettings);
-    // add file contructor
     this.validate();
   }
-
-  /**
-   * Loads settings from settings.json file if it exists
-   */
   private loadFileSettings(): any {
     const settingsPath = join(process.cwd(), 'settings.json');
-
     if (!existsSync(settingsPath)) {
       return {};
     }
-
     try {
       const fileContent = readFileSync(settingsPath, 'utf8');
       return JSON.parse(fileContent);
@@ -63,20 +49,12 @@ export class Settings implements ISettings {
       return {};
     }
   }
-
-  /**
-   * Initializes required settings and validates them
-   */
   private initializeRequiredSettings(fileSettings: any): void {
     this.token = fileSettings.token || process.env.DISCORD_TOKEN || '';
     this.client_id = fileSettings.client_id || process.env.DISCORD_CLIENT_ID || '';
     this.mongodb_url = fileSettings.mongodb_url || process.env.MONGODB_URL || '';
     this.mongodb_name = fileSettings.mongodb_name || process.env.MONGODB_NAME || '';
   }
-
-  /**
-   * Initializes optional settings with default values
-   */
   private initializeOptionalSettings(fileSettings: any): void {
     this.genius_token = fileSettings.genius_token || process.env.GENIUS_TOKEN;
     this.prefix = fileSettings.prefix || process.env.BOT_PREFIX || '?';
@@ -86,10 +64,6 @@ export class Settings implements ISettings {
     this.bot_access_user = fileSettings.bot_access_user || [];
     this.version = fileSettings.version;
   }
-
-  /**
-   * Initializes complex settings with default configurations
-   */
   private initializeComplexSettings(fileSettings: any): void {
     this.nodes = fileSettings.nodes || this.getDefaultNodes();
     this.activity = fileSettings.activity || this.getDefaultActivity();
@@ -101,36 +75,19 @@ export class Settings implements ISettings {
     this.cooldowns = fileSettings.cooldowns || {};
     this.aliases = fileSettings.aliases || {};
   }
-
-  /**
-   * Validates that all required settings are present
-   */
   private validate(): void {
     const requiredSettings = ['token', 'client_id', 'mongodb_url', 'mongodb_name'];
     const missingSettings = requiredSettings.filter(setting => !this[setting as keyof this]);
-
     if (missingSettings.length > 0) {
       throw new Error(`Missing required settings: ${missingSettings.join(', ')}`);
     }
   }
-
-  /**
-   * Creates default activity configuration
-   */
   private getDefaultActivity(): IActivityConfig[] {
     return [{ type: 'listening', name: '/help', status: 'online' }];
   }
-
-  /**
-   * Creates default voice status template
-   */
   private getDefaultVoiceStatusTemplate(): string {
-    return '{{@@track_name@@ != \'None\' ?? @@track_source_emoji@@ Now Playing: @@track_name@@ // Waiting for song requests}}';
+    return '{{@@track_name@@ != \'None\' ?? @@track_source_emoji@@ Now Playing: @@track_name@@}}';
   }
-
-  /**
-   * Creates default Lavalink node configuration
-   */
   private getDefaultNodes(): Record<string, INodeConfig> {
     return {
       DEFAULT: {
@@ -142,7 +99,6 @@ export class Settings implements ISettings {
       },
     };
   }
-
   private getDefaultLogging(): ILoggingConfig {
     return {
       file: {
@@ -157,7 +113,6 @@ export class Settings implements ISettings {
       'max-history': parseInt(process.env.LOG_MAX_HISTORY || '30'),
     };
   }
-
   private getDefaultIPC(): IIPCConfig {
     return {
       host: process.env.IPC_HOST || '127.0.0.1',
@@ -167,7 +122,6 @@ export class Settings implements ISettings {
       enable: process.env.IPC_ENABLE === 'true',
     };
   }
-
   private getDefaultSources(): Record<string, any> {
     return {
       youtube: { emoji: '🎵', color: '0xFF0000' },
@@ -183,7 +137,6 @@ export class Settings implements ISettings {
       others: { emoji: '🔗', color: '0xb3b3b3' },
     };
   }
-
   private getDefaultController(): IControllerConfig {
     return {
       embeds: {
@@ -204,7 +157,7 @@ export class Settings implements ISettings {
             name: 'There are no songs playing right now',
           },
           description: '[Support](@@server_invite_link@@) | [Invite](@@invite_link@@)',
-          image: 'https://i.imgur.com/dIFBwU7.png',
+          image: 'https://example.com/default-image.png',
           color: '@@default_embed_color@@',
         },
       },

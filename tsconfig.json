@@ -32,7 +32,7 @@
       "@/*": ["*"],
       "@core/*": ["core/*"],
       "@interfaces/*": ["interfaces/*"],
-      "@voicelink/*": ["voicelink/*"],
+      "@audio/*": ["audio/*"],
       "@commands/*": ["commands/*"],
       "@views/*": ["views/*"],
       "@ipc/*": ["ipc/*"],

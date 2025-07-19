@@ -3,7 +3,6 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-
 import {
   ActionRowBuilder,
   StringSelectMenuBuilder,
@@ -20,7 +19,6 @@ import { Track } from '@voicelink/Track';
 import { Player } from '@voicelink/Player';
 import { Utils } from '@core/Utils';
 import { logger } from '@core/Logger';
-
 export interface ISearchViewOptions {
   tracks: Track[];
   player: Player;
@@ -28,7 +26,6 @@ export interface ISearchViewOptions {
   query: string;
   maxResults?: number;
 }
-
 export class SearchView {
   private tracks: Track[];
   private player: Player;
@@ -37,7 +34,6 @@ export class SearchView {
   private maxResults: number;
   private message?: Message;
   private selectedTracks: Track[] = [];
-
   constructor(options: ISearchViewOptions) {
     this.tracks = options.tracks.slice(0, options.maxResults || 10);
     this.player = options.player;
@@ -45,17 +41,14 @@ export class SearchView {
     this.query = options.query;
     this.maxResults = options.maxResults || 10;
   }
-
   public async send(channel: any): Promise<Message> {
     const embed = this.createEmbed();
     const components = this.createComponents();
-
     try {
       this.message = await channel.send({
         embeds: [embed],
         components,
       });
-
       this.setupInteractionCollector();
       return this.message;
     } catch (error) {
@@ -63,13 +56,10 @@ export class SearchView {
       throw error;
     }
   }
-
   public async update(): Promise<void> {
     if (!this.message) return;
-
     const embed = this.createEmbed();
     const components = this.createComponents();
-
     try {
       await this.message.edit({
         embeds: [embed],
@@ -79,7 +69,6 @@ export class SearchView {
       logger.error('Failed to update search view', error as Error, 'search');
     }
   }
-
   private createEmbed(): EmbedBuilder {
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
@@ -88,7 +77,6 @@ export class SearchView {
       .setFooter({
         text: `${this.tracks.length} results • Select tracks to add to queue`,
       });
-
     if (this.selectedTracks.length > 0) {
       embed.addFields([
         {
@@ -100,21 +88,16 @@ export class SearchView {
         },
       ]);
     }
-
     return embed;
   }
-
   private createComponents(): ActionRowBuilder<any>[] {
     const components: ActionRowBuilder<any>[] = [];
-
-    // Track selection menu
     if (this.tracks.length > 0) {
       const selectMenu = new StringSelectMenuBuilder()
         .setCustomId('search_select')
         .setPlaceholder('Select tracks to add to queue')
         .setMinValues(1)
         .setMaxValues(Math.min(this.tracks.length, 10));
-
       this.tracks.forEach((track, index) => {
         const option = new StringSelectMenuOptionBuilder()
           .setLabel(Utils.truncateString(track.title, 100))
@@ -123,17 +106,12 @@ export class SearchView {
           )
           .setValue(index.toString())
           .setEmoji(this.getSourceEmoji(track.source));
-
         selectMenu.addOptions(option);
       });
-
       const selectRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
       components.push(selectRow);
     }
-
-    // Action buttons
     const buttonRow = new ActionRowBuilder<ButtonBuilder>();
-
     buttonRow.addComponents(
       new ButtonBuilder()
         .setCustomId('search_add')
@@ -141,41 +119,33 @@ export class SearchView {
         .setEmoji('➕')
         .setStyle(ButtonStyle.Success)
         .setDisabled(this.selectedTracks.length === 0),
-
       new ButtonBuilder()
         .setCustomId('search_add_all')
         .setLabel('Add All')
         .setEmoji('📋')
         .setStyle(ButtonStyle.Primary)
         .setDisabled(this.tracks.length === 0),
-
       new ButtonBuilder()
         .setCustomId('search_clear')
         .setLabel('Clear Selection')
         .setEmoji('🗑️')
         .setStyle(ButtonStyle.Secondary)
         .setDisabled(this.selectedTracks.length === 0),
-
       new ButtonBuilder()
         .setCustomId('search_cancel')
         .setLabel('Cancel')
         .setEmoji('❌')
         .setStyle(ButtonStyle.Danger)
     );
-
     components.push(buttonRow);
-
     return components;
   }
-
   private setupInteractionCollector(): void {
     if (!this.message) return;
-
     const collector = this.message.createMessageComponentCollector({
       filter: (interaction) => interaction.user.id === this.user.id,
-      time: 60000, // 1 minute
+      time: 60000, 
     });
-
     collector.on('collect', async (interaction) => {
       try {
         if (interaction.isStringSelectMenu()) {
@@ -187,7 +157,6 @@ export class SearchView {
         logger.error('Error handling search interaction', error as Error, 'search');
       }
     });
-
     collector.on('end', async () => {
       try {
         if (this.message && !this.message.deleted) {
@@ -200,18 +169,14 @@ export class SearchView {
       }
     });
   }
-
   private async handleSelectMenu(interaction: StringSelectMenuInteraction): Promise<void> {
     const selectedIndices = interaction.values.map(value => parseInt(value));
     this.selectedTracks = selectedIndices.map(index => this.tracks[index]);
-
     await interaction.deferUpdate();
     await this.update();
   }
-
   private async handleButton(interaction: any): Promise<void> {
     const action = interaction.customId.replace('search_', '');
-
     switch (action) {
       case 'add':
         await this.handleAddSelected(interaction);
@@ -227,7 +192,6 @@ export class SearchView {
         break;
     }
   }
-
   private async handleAddSelected(interaction: any): Promise<void> {
     if (this.selectedTracks.length === 0) {
       await interaction.reply({
@@ -236,34 +200,26 @@ export class SearchView {
       });
       return;
     }
-
     try {
       let addedCount = 0;
       for (const track of this.selectedTracks) {
         const position = await this.player.addTrack(track);
         if (position > 0) addedCount++;
       }
-
       const trackList = this.selectedTracks
         .slice(0, 3)
         .map(track => Utils.truncateString(track.title, 30))
         .join(', ');
-
       const message = this.selectedTracks.length === 1
         ? `✅ Added **${trackList}** to the queue!`
         : `✅ Added **${this.selectedTracks.length}** tracks to the queue! (${trackList}${this.selectedTracks.length > 3 ? '...' : ''})`;
-
       await interaction.reply({
         content: message,
         ephemeral: true,
       });
-
-      // Start playing if not already playing
       if (!this.player.isPlaying && !this.player.current) {
         await this.player.doNext();
       }
-
-      // Clear the search view
       await this.destroy();
     } catch (error) {
       logger.error('Error adding selected tracks', error as Error, 'search');
@@ -273,7 +229,6 @@ export class SearchView {
       });
     }
   }
-
   private async handleAddAll(interaction: any): Promise<void> {
     if (this.tracks.length === 0) {
       await interaction.reply({
@@ -282,25 +237,19 @@ export class SearchView {
       });
       return;
     }
-
     try {
       let addedCount = 0;
       for (const track of this.tracks) {
         const position = await this.player.addTrack(track);
         if (position > 0) addedCount++;
       }
-
       await interaction.reply({
         content: `✅ Added **${addedCount}** tracks to the queue!`,
         ephemeral: true,
       });
-
-      // Start playing if not already playing
       if (!this.player.isPlaying && !this.player.current) {
         await this.player.doNext();
       }
-
-      // Clear the search view
       await this.destroy();
     } catch (error) {
       logger.error('Error adding all tracks', error as Error, 'search');
@@ -310,13 +259,11 @@ export class SearchView {
       });
     }
   }
-
   private async handleClear(interaction: any): Promise<void> {
     this.selectedTracks = [];
     await interaction.deferUpdate();
     await this.update();
   }
-
   private async handleCancel(interaction: any): Promise<void> {
     await interaction.reply({
       content: '❌ Search cancelled.',
@@ -324,7 +271,6 @@ export class SearchView {
     });
     await this.destroy();
   }
-
   private async destroy(): Promise<void> {
     if (this.message) {
       try {
@@ -335,7 +281,6 @@ export class SearchView {
       this.message = undefined;
     }
   }
-
   private getSourceEmoji(source: string): string {
     const sourceMap: Record<string, string> = {
       youtube: '🎵',
@@ -349,7 +294,6 @@ export class SearchView {
       reddit: '🎵',
       tiktok: '🎵',
     };
-
     return sourceMap[source.toLowerCase()] || '🔗';
   }
 }

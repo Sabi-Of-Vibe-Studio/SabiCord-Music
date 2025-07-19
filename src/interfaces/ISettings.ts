@@ -1,9 +1,25 @@
 /**
  * MIT License
- * 
+ *
  * Copyright (c) 2025 NirrussVn0
  */
-
+export interface IDiscordConfig {
+  token: string;
+  client_id: string;
+}
+export interface IDatabaseConfig {
+  mongodb_url: string;
+  mongodb_name: string;
+}
+export interface IBotConfig {
+  prefix: string;
+  embed_color: string;
+  default_max_queue: number;
+  lyrics_platform: string;
+  bot_access_user: string[];
+  cooldowns: Record<string, [number, number]>;
+  aliases: Record<string, string[]>;
+}
 export interface INodeConfig {
   host: string;
   port: number;
@@ -19,13 +35,11 @@ export interface INodeConfig {
     strategy: string;
   };
 }
-
 export interface IActivityConfig {
   type: 'playing' | 'streaming' | 'listening' | 'watching' | 'competing';
   name: string;
   status?: 'online' | 'idle' | 'dnd' | 'invisible';
 }
-
 export interface ILoggingConfig {
   file: {
     path: string;
@@ -34,12 +48,10 @@ export interface ILoggingConfig {
   level: Record<string, string>;
   'max-history': number;
 }
-
 export interface ISourceSettings {
   emoji: string;
   color: string;
 }
-
 export interface IControllerEmbedConfig {
   description?: string;
   footer?: {
@@ -55,7 +67,6 @@ export interface IControllerEmbedConfig {
     name: string;
   };
 }
-
 export interface IControllerConfig {
   embeds: {
     active: IControllerEmbedConfig;
@@ -64,7 +75,6 @@ export interface IControllerConfig {
   default_buttons: Array<Array<string | Record<string, string>>>;
   disableButtonText: boolean;
 }
-
 export interface IIPCConfig {
   host: string;
   port: number;
@@ -72,7 +82,6 @@ export interface IIPCConfig {
   secure: boolean;
   enable: boolean;
 }
-
 export interface ISettings {
   token: string;
   client_id: string;
@@ -95,7 +104,6 @@ export interface ISettings {
   aliases: Record<string, string[]>;
   version?: string;
 }
-
 export interface IGuildSettings {
   _id: number;
   lang?: string;
@@ -106,14 +114,12 @@ export interface IGuildSettings {
   controller_msg?: boolean;
   [key: string]: any;
 }
-
 export interface IUserData {
   _id: number;
   playlist: Record<string, IPlaylistData>;
   history: ITrackHistory[];
   inbox: any[];
 }
-
 export interface IPlaylistData {
   tracks: ITrackData[];
   perms: {
@@ -124,7 +130,6 @@ export interface IPlaylistData {
   name: string;
   type: string;
 }
-
 export interface ITrackData {
   track_id: string;
   title: string;
@@ -136,7 +141,6 @@ export interface ITrackData {
   start_time?: number;
   end_time?: number;
 }
-
 export interface ITrackHistory {
   track: ITrackData;
   played_at: Date;
