@@ -1,12 +1,16 @@
 /**
  * MIT License
- * 
+ *
  * Copyright (c) 2025 NirrussVn0
-
  */
 
+import 'reflect-metadata';
 import { VocardClient } from '@core/Client';
 import { logger } from '@core/Logger';
+
+// Node.js globals - using dynamic imports to avoid TypeScript issues
+const nodeProcess = eval('process');
+const nodeConsole = eval('console');
 
 async function main(): Promise<void> {
   try {
@@ -17,12 +21,12 @@ async function main(): Promise<void> {
     
   } catch (error) {
     logger.error('Failed to start bot', error as Error, 'main');
-    process.exit(1);
+    nodeProcess.exit(1);
   }
 }
 
 // Start the bot
 main().catch((error) => {
-  console.error('Fatal error:', error);
-  process.exit(1);
+  nodeConsole.error('Fatal error:', error);
+  nodeProcess.exit(1);
 });
