@@ -3,7 +3,6 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-
 import { 
   CommandInteraction, 
   ApplicationCommandOptionType, 
@@ -12,18 +11,16 @@ import {
 } from 'discord.js';
 import { Discord, Slash, SlashOption, SlashGroup } from '@discordx/discordx';
 import { injectable, container } from 'tsyringe';
-import { getPlayer } from '@voicelink/index';
-import { LoopType } from '@voicelink/index';
+import { getPlayer } from '@audio/index';
+import { LoopMode } from '@audio/index';
 import { Database } from '@core/Database';
 import { Utils } from '@core/Utils';
 import { logger } from '@core/Logger';
-
 @Discord()
 @SlashGroup({ description: 'Queue and playlist management commands', name: 'queue' })
 @SlashGroup('queue')
 @injectable()
 export class PlaylistCommands {
-
   @Slash({ description: 'Show the current music queue' })
   async list(
     @SlashOption({
@@ -37,26 +34,21 @@ export class PlaylistCommands {
     interaction: CommandInteraction
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     const tracks = player.queue.tracks();
-    
     if (tracks.length === 0) {
       await interaction.reply({ content: '❌ The queue is empty!', ephemeral: true });
       return;
     }
-
     const tracksPerPage = 10;
     const totalPages = Math.ceil(tracks.length / tracksPerPage);
     const currentPage = Math.min(page, totalPages);
     const startIndex = (currentPage - 1) * tracksPerPage;
     const endIndex = startIndex + tracksPerPage;
     const pageTrack = tracks.slice(startIndex, endIndex);
-
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
       .setTitle('🎵 Music Queue')
@@ -72,7 +64,6 @@ export class PlaylistCommands {
       .setFooter({ 
         text: `Page ${currentPage}/${totalPages} • ${tracks.length} tracks • ${player.queue.formattedLength} total duration` 
       });
-
     if (player.current) {
       embed.addFields([
         {
@@ -82,19 +73,15 @@ export class PlaylistCommands {
         },
       ]);
     }
-
     await interaction.reply({ embeds: [embed] });
   }
-
   @Slash({ description: 'Shuffle the music queue' })
   async shuffle(interaction: CommandInteraction): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -102,16 +89,13 @@ export class PlaylistCommands {
       });
       return;
     }
-
     if (player.queue.isEmpty) {
       await interaction.reply({ content: '❌ The queue is empty!', ephemeral: true });
       return;
     }
-
     if (!player.isPrivileged(interaction.user)) {
       player.shuffleVotes.add(interaction.user);
       const required = player.requiredVotes();
-      
       if (player.shuffleVotes.size < required) {
         await interaction.reply({
           content: `🗳️ Vote to shuffle registered! (${player.shuffleVotes.size}/${required})`,
@@ -119,20 +103,16 @@ export class PlaylistCommands {
         return;
       }
     }
-
     player.queue.shuffle();
     await interaction.reply({ content: '🔀 Queue shuffled!' });
   }
-
   @Slash({ description: 'Clear the music queue' })
   async clear(interaction: CommandInteraction): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -140,7 +120,6 @@ export class PlaylistCommands {
       });
       return;
     }
-
     if (!player.isPrivileged(interaction.user)) {
       await interaction.reply({
         content: '❌ You need DJ permissions to clear the queue!',
@@ -148,13 +127,10 @@ export class PlaylistCommands {
       });
       return;
     }
-
     const trackCount = player.queue.count;
     player.queue.clear();
-    
     await interaction.reply({ content: `🗑️ Cleared **${trackCount}** tracks from the queue!` });
   }
-
   @Slash({ description: 'Remove a track from the queue' })
   async remove(
     @SlashOption({
@@ -176,12 +152,10 @@ export class PlaylistCommands {
     interaction: CommandInteraction
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -189,16 +163,13 @@ export class PlaylistCommands {
       });
       return;
     }
-
     if (player.queue.isEmpty) {
       await interaction.reply({ content: '❌ The queue is empty!', ephemeral: true });
       return;
     }
-
     try {
       const removedTracks = player.queue.remove(position, end, interaction.user);
       const removedCount = Object.keys(removedTracks).length;
-      
       if (removedCount === 0) {
         await interaction.reply({ 
           content: '❌ No tracks were removed. You can only remove tracks you requested!', 
@@ -206,16 +177,13 @@ export class PlaylistCommands {
         });
         return;
       }
-
       const trackNames = Object.values(removedTracks)
         .slice(0, 3)
         .map(track => Utils.truncateString(track.title, 30))
         .join(', ');
-
       const message = removedCount === 1 
         ? `🗑️ Removed **${trackNames}** from the queue!`
         : `🗑️ Removed **${removedCount}** tracks from the queue! (${trackNames}${removedCount > 3 ? '...' : ''})`;
-
       await interaction.reply({ content: message });
     } catch (error) {
       await interaction.reply({ 
@@ -224,7 +192,6 @@ export class PlaylistCommands {
       });
     }
   }
-
   @Slash({ description: 'Set the repeat mode for the queue' })
   async repeat(
     @SlashOption({
@@ -242,12 +209,10 @@ export class PlaylistCommands {
     interaction: CommandInteraction
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -255,26 +220,20 @@ export class PlaylistCommands {
       });
       return;
     }
-
     if (!mode) {
-      // Toggle through modes
       const currentMode = player.queue.repeatMode;
       const nextMode = player.queue.nextRepeat();
-      
       await interaction.reply({ 
         content: `🔁 Repeat mode changed from **${this.getRepeatModeString(currentMode)}** to **${this.getRepeatModeString(nextMode)}**!` 
       });
       return;
     }
-
     const repeatMode = this.parseRepeatMode(mode);
     await player.setRepeat(repeatMode);
-    
     await interaction.reply({ 
       content: `🔁 Repeat mode set to **${this.getRepeatModeString(repeatMode)}**!` 
     });
   }
-
   @Slash({ description: 'Jump to a specific track in the queue' })
   async skipto(
     @SlashOption({
@@ -288,12 +247,10 @@ export class PlaylistCommands {
     interaction: CommandInteraction
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
-    
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-
     if (!player.isUserInChannel(interaction.user)) {
       await interaction.reply({
         content: `❌ You must be in ${player.channel} to use this command!`,
@@ -301,7 +258,6 @@ export class PlaylistCommands {
       });
       return;
     }
-
     if (!player.isPrivileged(interaction.user)) {
       await interaction.reply({
         content: '❌ You need DJ permissions to skip to a specific track!',
@@ -309,7 +265,6 @@ export class PlaylistCommands {
       });
       return;
     }
-
     if (position > player.queue.count) {
       await interaction.reply({ 
         content: `❌ Invalid position! The queue only has ${player.queue.count} tracks.`, 
@@ -317,11 +272,9 @@ export class PlaylistCommands {
       });
       return;
     }
-
     try {
       player.queue.skipTo(position);
-      await player.stop(); // This will trigger the next track to play
-      
+      await player.stop(); 
       await interaction.reply({ content: `⏭️ Skipped to position **${position}** in the queue!` });
     } catch (error) {
       await interaction.reply({ 
@@ -330,7 +283,6 @@ export class PlaylistCommands {
       });
     }
   }
-
   @Slash({ description: 'Show your listening history' })
   async history(
     @SlashOption({
@@ -346,19 +298,16 @@ export class PlaylistCommands {
     try {
       const database = container.resolve<Database>('Database');
       const userData = await database.users.getUser(interaction.user.id);
-      
       if (!userData.history || userData.history.length === 0) {
         await interaction.reply({ content: '❌ You have no listening history!', ephemeral: true });
         return;
       }
-
       const tracksPerPage = 10;
       const totalPages = Math.ceil(userData.history.length / tracksPerPage);
       const currentPage = Math.min(page, totalPages);
       const startIndex = (currentPage - 1) * tracksPerPage;
       const endIndex = startIndex + tracksPerPage;
       const pageHistory = userData.history.slice(startIndex, endIndex);
-
       const embed = new EmbedBuilder()
         .setColor('#0099ff')
         .setTitle('🎵 Your Listening History')
@@ -373,7 +322,6 @@ export class PlaylistCommands {
             .join('\n')
         )
         .setFooter({ text: `Page ${currentPage}/${totalPages} • ${userData.history.length} total tracks` });
-
       await interaction.reply({ embeds: [embed] });
     } catch (error) {
       logger.error('Error in history command', error as Error, 'commands');
@@ -383,27 +331,25 @@ export class PlaylistCommands {
       });
     }
   }
-
-  private parseRepeatMode(mode: string): LoopType {
+  private parseRepeatMode(mode: string): LoopMode {
     switch (mode.toLowerCase()) {
       case 'off':
-        return LoopType.OFF;
+        return LoopMode.NONE;
       case 'track':
-        return LoopType.TRACK;
+        return LoopMode.TRACK;
       case 'queue':
-        return LoopType.QUEUE;
+        return LoopMode.QUEUE;
       default:
-        return LoopType.OFF;
+        return LoopMode.NONE;
     }
   }
-
-  private getRepeatModeString(mode: LoopType): string {
+  private getRepeatModeString(mode: LoopMode): string {
     switch (mode) {
-      case LoopType.OFF:
+      case LoopMode.NONE:
         return 'Off';
-      case LoopType.TRACK:
+      case LoopMode.TRACK:
         return 'Track';
-      case LoopType.QUEUE:
+      case LoopMode.QUEUE:
         return 'Queue';
       default:
         return 'Off';

@@ -1,4 +1,4 @@
-# SabiCord Music - Discord Music Bot
+# SabiCord - Discord Music Bot
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Node.js Version](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
@@ -24,7 +24,7 @@ A modern, feature-rich Discord music bot built with TypeScript, featuring high-q
 1. **Clone the repository**
    ```bash
    git clone git https://github.com/Sabi-Of-Vibe-Studio/SabiCord-Music.git
-   cd Vocard
+   cd SabiCord-Music
    ```
 
 2. **Install dependencies**

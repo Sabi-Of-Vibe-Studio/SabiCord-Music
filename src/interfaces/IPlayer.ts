@@ -1,12 +1,10 @@
 /**
  * MIT License
- * 
- * Copyright (c) 2023 - present Vocard Development
+ *
+ * Copyright (c) 2025 NirrussVn0
  */
-
 import { VoiceChannel, Guild, User } from 'discord.js';
 import { ITrackData } from './ISettings';
-
 export enum SearchType {
   YOUTUBE = 'ytsearch',
   YOUTUBE_MUSIC = 'ytmsearch',
@@ -20,20 +18,17 @@ export enum SearchType {
   REDDIT = 'rdsearch',
   TIKTOK = 'ttsearch',
 }
-
 export enum LoopType {
   OFF = 'off',
   TRACK = 'track',
   QUEUE = 'queue',
 }
-
 export enum RequestMethod {
   GET = 'GET',
   POST = 'POST',
   PATCH = 'PATCH',
   DELETE = 'DELETE',
 }
-
 export interface ITrack {
   track_id: string;
   title: string;
@@ -48,13 +43,11 @@ export interface ITrack {
   formatted_length: string;
   source: string;
 }
-
 export interface IPlaylist {
   name: string;
   tracks: ITrack[];
   selected_track?: number;
 }
-
 export interface IQueue {
   tracks: ITrack[];
   current_index: number;
@@ -67,12 +60,10 @@ export interface IQueue {
   get_next(): Promise<ITrack | null>;
   get_previous(): Promise<ITrack | null>;
 }
-
 export interface IFilter {
   name: string;
   value: any;
 }
-
 export interface IFilters {
   volume?: number;
   equalizer?: number[];
@@ -85,7 +76,6 @@ export interface IFilters {
   channel_mix?: any;
   low_pass?: any;
 }
-
 export interface INode {
   identifier: string;
   host: string;
@@ -99,7 +89,6 @@ export interface INode {
   disconnect(): Promise<void>;
   send(data: any): Promise<any>;
 }
-
 export interface IPlayer {
   guild: Guild;
   channel: VoiceChannel;
@@ -112,14 +101,10 @@ export interface IPlayer {
   is_connected: boolean;
   position: number;
   ping: number;
-  
-  // Voting system
   pause_votes: Set<User>;
   resume_votes: Set<User>;
   skip_votes: Set<User>;
   stop_votes: Set<User>;
-  
-  // Methods
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   play(track: ITrack, options?: { start?: number; end?: number }): Promise<void>;
@@ -130,8 +115,6 @@ export interface IPlayer {
   set_volume(volume: number): Promise<void>;
   set_filters(filters: IFilters): Promise<void>;
   set_repeat(mode: LoopType): Promise<void>;
-  
-  // Utility methods
   is_user_join(user: User): boolean;
   is_privileged(user: User): boolean;
   required(): number;
@@ -139,7 +122,6 @@ export interface IPlayer {
   add_track(track: ITrack | ITrack[], options?: { at_front?: boolean; start_time?: number; end_time?: number }): Promise<number>;
   do_next(): Promise<void>;
 }
-
 export interface IPlayerEvents {
   trackStart: (player: IPlayer, track: ITrack) => void;
   trackEnd: (player: IPlayer, track: ITrack, reason: string) => void;

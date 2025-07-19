@@ -3,12 +3,8 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-
-/// <reference types="node" />
-
 declare const process: NodeJS.Process;
 declare const console: Console;
-
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
@@ -36,5 +32,4 @@ declare global {
     }
   }
 }
-
 export {};

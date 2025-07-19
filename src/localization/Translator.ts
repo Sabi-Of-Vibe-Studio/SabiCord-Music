@@ -3,76 +3,60 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { logger } from '@core/Logger';
-
 export interface ITranslationData {
   [key: string]: string | ITranslationData;
 }
-
 export interface IPlaceholderData {
   [key: string]: string | number | boolean;
 }
-
 export class Translator {
   private static instance: Translator;
   private translations = new Map<string, ITranslationData>();
   private defaultLanguage = 'EN';
   private availableLanguages: string[] = [];
-
   private constructor() {
     this.loadTranslations();
   }
-
   public static getInstance(): Translator {
     if (!Translator.instance) {
       Translator.instance = new Translator();
     }
     return Translator.instance;
   }
-
   private loadTranslations(): void {
     const langsPath = join(__dirname, 'langs');
-    
     if (!existsSync(langsPath)) {
       logger.warn('Languages directory not found, creating default translations', 'translator');
       this.createDefaultTranslations();
       return;
     }
-
     try {
       const files = readdirSync(langsPath).filter(file => file.endsWith('.json'));
-      
       for (const file of files) {
         const langCode = file.replace('.json', '').toUpperCase();
         const filePath = join(langsPath, file);
-        
         try {
           const content = readFileSync(filePath, 'utf8');
           const translations = JSON.parse(content);
-          
           this.translations.set(langCode, translations);
           this.availableLanguages.push(langCode);
-          
           logger.debug(`Loaded translations for ${langCode}`, 'translator');
         } catch (error) {
           logger.error(`Failed to load translations for ${langCode}`, error as Error, 'translator');
         }
       }
-
       if (this.availableLanguages.length === 0) {
         this.createDefaultTranslations();
       }
-
       logger.info(`Loaded ${this.availableLanguages.length} language(s): ${this.availableLanguages.join(', ')}`, 'translator');
     } catch (error) {
       logger.error('Failed to load translations', error as Error, 'translator');
       this.createDefaultTranslations();
     }
   }
-
   private createDefaultTranslations(): void {
     const defaultTranslations: ITranslationData = {
       commands: {
@@ -195,36 +179,27 @@ export class Translator {
         years: 'years',
       },
     };
-
     this.translations.set(this.defaultLanguage, defaultTranslations);
     this.availableLanguages.push(this.defaultLanguage);
-    
     logger.info('Created default English translations', 'translator');
   }
-
   public translate(key: string, language?: string, placeholders?: IPlaceholderData): string {
     const lang = language?.toUpperCase() || this.defaultLanguage;
     const translations = this.translations.get(lang) || this.translations.get(this.defaultLanguage);
-    
     if (!translations) {
       logger.warn(`No translations found for language ${lang}`, 'translator');
       return key;
     }
-
     const value = this.getNestedValue(translations, key);
-    
     if (typeof value !== 'string') {
       logger.warn(`Translation key '${key}' not found for language ${lang}`, 'translator');
       return key;
     }
-
     return this.replacePlaceholders(value, placeholders);
   }
-
   private getNestedValue(obj: ITranslationData, path: string): any {
     const keys = path.split('.');
     let current: any = obj;
-
     for (const key of keys) {
       if (current && typeof current === 'object' && key in current) {
         current = current[key];
@@ -232,31 +207,23 @@ export class Translator {
         return undefined;
       }
     }
-
     return current;
   }
-
   private replacePlaceholders(text: string, placeholders?: IPlaceholderData): string {
     if (!placeholders) return text;
-
     let result = text;
-    
     for (const [key, value] of Object.entries(placeholders)) {
       const placeholder = `{${key}}`;
       result = result.replace(new RegExp(placeholder, 'g'), String(value));
     }
-
     return result;
   }
-
   public getAvailableLanguages(): string[] {
     return [...this.availableLanguages];
   }
-
   public isLanguageAvailable(language: string): boolean {
     return this.availableLanguages.includes(language.toUpperCase());
   }
-
   public setDefaultLanguage(language: string): void {
     if (this.isLanguageAvailable(language)) {
       this.defaultLanguage = language.toUpperCase();
@@ -265,11 +232,9 @@ export class Translator {
       logger.warn(`Language ${language} is not available`, 'translator');
     }
   }
-
   public getDefaultLanguage(): string {
     return this.defaultLanguage;
   }
-
   public reloadTranslations(): void {
     this.translations.clear();
     this.availableLanguages = [];
@@ -277,11 +242,7 @@ export class Translator {
     logger.info('Translations reloaded', 'translator');
   }
 }
-
-// Export singleton instance
 export const translator = Translator.getInstance();
-
-// Helper function for easy translation
 export function t(key: string, language?: string, placeholders?: IPlaceholderData): string {
   return translator.translate(key, language, placeholders);
 }

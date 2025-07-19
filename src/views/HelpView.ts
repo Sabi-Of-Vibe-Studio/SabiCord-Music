@@ -3,7 +3,6 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-
 import {
   ActionRowBuilder,
   StringSelectMenuBuilder,
@@ -17,19 +16,16 @@ import {
   ButtonStyle,
 } from 'discord.js';
 import { logger } from '@core/Logger';
-
 export interface IHelpViewOptions {
   user: User;
   prefix?: string;
 }
-
 interface ICommandCategory {
   name: string;
   emoji: string;
   description: string;
   commands: ICommand[];
 }
-
 interface ICommand {
   name: string;
   description: string;
@@ -37,30 +33,25 @@ interface ICommand {
   aliases?: string[];
   examples?: string[];
 }
-
 export class HelpView {
   private user: User;
   private prefix: string;
   private message?: Message;
   private currentCategory = 'overview';
   private categories: Record<string, ICommandCategory>;
-
   constructor(options: IHelpViewOptions) {
     this.user = options.user;
     this.prefix = options.prefix || '/';
     this.categories = this.initializeCategories();
   }
-
   public async send(channel: any): Promise<Message> {
     const embed = this.createEmbed();
     const components = this.createComponents();
-
     try {
       this.message = await channel.send({
         embeds: [embed],
         components,
       });
-
       this.setupInteractionCollector();
       return this.message;
     } catch (error) {
@@ -68,16 +59,14 @@ export class HelpView {
       throw error;
     }
   }
-
   private createEmbed(): EmbedBuilder {
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
       .setTitle('🤖 Vocard Help')
-      .setThumbnail('https://i.imgur.com/dIFBwU7.png')
+      .setThumbnail('https:
       .setFooter({
         text: 'Use the dropdown menu to navigate between categories',
       });
-
     if (this.currentCategory === 'overview') {
       embed.setDescription(
         'Welcome to Vocard! A powerful Discord music bot with advanced features.\n\n' +
@@ -93,13 +82,12 @@ export class HelpView {
         `2. Use \`${this.prefix}music play <song>\` to start playing music\n` +
         `3. Use the interactive controller to manage playback\n\n` +
         '**🔗 Links:**\n' +
-        '[Support Server](https://discord.gg/vocard) • [Invite Bot](https://discord.com/oauth2/authorize?client_id=605618911471468554&permissions=8&scope=bot%20applications.commands) • [GitHub](https://github.com/ChocoMeow/Vocard)'
+        '[Support Server](https:
       );
     } else {
       const category = this.categories[this.currentCategory];
       if (category) {
         embed.setDescription(`${category.emoji} **${category.name}**\n${category.description}\n\n`);
-        
         const commandList = category.commands
           .map(cmd => {
             let commandText = `**${this.prefix}${cmd.name}** - ${cmd.description}`;
@@ -112,7 +100,6 @@ export class HelpView {
             return commandText;
           })
           .join('\n\n');
-
         embed.addFields([
           {
             name: 'Commands',
@@ -122,19 +109,13 @@ export class HelpView {
         ]);
       }
     }
-
     return embed;
   }
-
   private createComponents(): ActionRowBuilder<any>[] {
     const components: ActionRowBuilder<any>[] = [];
-
-    // Category selection menu
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId('help_category')
       .setPlaceholder('Select a category to view commands');
-
-    // Add overview option
     selectMenu.addOptions(
       new StringSelectMenuOptionBuilder()
         .setLabel('Overview')
@@ -143,8 +124,6 @@ export class HelpView {
         .setEmoji('🏠')
         .setDefault(this.currentCategory === 'overview')
     );
-
-    // Add category options
     Object.entries(this.categories).forEach(([key, category]) => {
       selectMenu.addOptions(
         new StringSelectMenuOptionBuilder()
@@ -155,52 +134,40 @@ export class HelpView {
           .setDefault(this.currentCategory === key)
       );
     });
-
     const selectRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
     components.push(selectRow);
-
-    // Action buttons
     const buttonRow = new ActionRowBuilder<ButtonBuilder>();
-
     buttonRow.addComponents(
       new ButtonBuilder()
         .setLabel('Support Server')
         .setEmoji('💬')
         .setStyle(ButtonStyle.Link)
-        .setURL('https://discord.gg/vocard'),
-
+        .setURL('https:
       new ButtonBuilder()
         .setLabel('Invite Bot')
         .setEmoji('➕')
         .setStyle(ButtonStyle.Link)
-        .setURL('https://discord.com/oauth2/authorize?client_id=605618911471468554&permissions=8&scope=bot%20applications.commands'),
-
+        .setURL('https:
       new ButtonBuilder()
         .setLabel('GitHub')
         .setEmoji('📚')
         .setStyle(ButtonStyle.Link)
-        .setURL('https://github.com/ChocoMeow/Vocard'),
-
+        .setURL('https:
       new ButtonBuilder()
         .setCustomId('help_close')
         .setLabel('Close')
         .setEmoji('❌')
         .setStyle(ButtonStyle.Secondary)
     );
-
     components.push(buttonRow);
-
     return components;
   }
-
   private setupInteractionCollector(): void {
     if (!this.message) return;
-
     const collector = this.message.createMessageComponentCollector({
       filter: (interaction) => interaction.user.id === this.user.id,
-      time: 300000, // 5 minutes
+      time: 300000, 
     });
-
     collector.on('collect', async (interaction) => {
       try {
         if (interaction.isStringSelectMenu()) {
@@ -212,7 +179,6 @@ export class HelpView {
         logger.error('Error handling help interaction', error as Error, 'help');
       }
     });
-
     collector.on('end', async () => {
       try {
         if (this.message && !this.message.deleted) {
@@ -225,28 +191,22 @@ export class HelpView {
       }
     });
   }
-
   private async handleSelectMenu(interaction: StringSelectMenuInteraction): Promise<void> {
     this.currentCategory = interaction.values[0];
-    
     await interaction.deferUpdate();
-    
     const embed = this.createEmbed();
     const components = this.createComponents();
-    
     await interaction.editReply({
       embeds: [embed],
       components,
     });
   }
-
   private async handleButton(interaction: any): Promise<void> {
     if (interaction.customId === 'help_close') {
       await interaction.deferUpdate();
       await this.destroy();
     }
   }
-
   private async destroy(): Promise<void> {
     if (this.message) {
       try {
@@ -257,7 +217,6 @@ export class HelpView {
       this.message = undefined;
     }
   }
-
   private initializeCategories(): Record<string, ICommandCategory> {
     return {
       music: {
@@ -269,7 +228,7 @@ export class HelpView {
             name: 'music play',
             description: 'Play a song or playlist from URL or search query',
             usage: 'music play <query> [start:time] [end:time]',
-            examples: ['music play Never Gonna Give You Up', 'music play https://youtu.be/dQw4w9WgXcQ'],
+            examples: ['music play Never Gonna Give You Up', 'music play https:
           },
           {
             name: 'music pause',
