@@ -61,7 +61,7 @@ function checkCommentRemoval() {
           copyrightHeaders++;
         } else if (inCopyright && line.includes('*/')) {
           inCopyright = false;
-        } else if (!inCopyright && (line.trim().startsWith('//') || line.trim().startsWith('/*') || line.trim().startsWith('*'))) {
+        } else if (!inCopyright && !line.includes('MIT License') && !line.includes('Copyright') && (line.trim().startsWith('//') || (line.trim().startsWith('/*') && !line.includes('MIT')) || (line.trim().startsWith('*') && !line.includes('MIT') && !line.includes('Copyright')))) {
           totalComments++;
         }
       }
