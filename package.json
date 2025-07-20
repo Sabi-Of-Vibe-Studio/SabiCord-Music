@@ -46,6 +46,7 @@
     "ws": "^8.16.0"
   },
   "devDependencies": {
+    "@discordjs/voice": "^0.18.0",
     "@types/jest": "^29.5.11",
     "@types/node": "^20.11.5",
     "@types/validator": "^13.11.8",
