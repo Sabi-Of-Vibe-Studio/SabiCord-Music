@@ -3,15 +3,16 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { 
-  VoiceChannel, 
-  Guild, 
-  User, 
+import {
+  VoiceChannel,
+  Guild,
+  User,
   VoiceConnection,
   joinVoiceChannel,
   VoiceConnectionStatus,
   entersState,
-  DiscordGatewayAdapterCreator
+  DiscordGatewayAdapterCreator,
+  PermissionsBitField
 } from 'discord.js';
 import { EventEmitter } from 'events';
 import { Track, Playlist } from './Track';
@@ -104,9 +105,6 @@ export class Player extends EventEmitter {
   }
   public get position(): number {
     return this.trackPosition;
-  }
-  public get volume(): number {
-    return this.currentVolume;
   }
   public get playerState(): PlayerState {
     return this.state;
@@ -291,7 +289,7 @@ export class Player extends EventEmitter {
   public isPrivileged(user: User): boolean {
     const member = this.guild.members.cache.get(user.id);
     if (!member) return false;
-    return member.permissions.has(['ManageChannels', 'Administrator']) ||
+    return member.permissions.has([PermissionsBitField.Flags.ManageChannels, PermissionsBitField.Flags.Administrator]) ||
            member.id === this.guild.ownerId ||
            this.channel.members.size <= 2;
   }
@@ -327,7 +325,7 @@ export class Player extends EventEmitter {
   }
   private validateChannelPermissions(): void {
     const permissions = this.channel.permissionsFor(this.guild.members.me!);
-    if (!permissions?.has(['Connect', 'Speak'])) {
+    if (!permissions?.has([PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak])) {
       throw new InvalidChannelPermissions('Missing required voice channel permissions');
     }
   }
