@@ -75,7 +75,7 @@ export class Settings implements ISettings {
     this.cooldowns = fileSettings.cooldowns || {};
     this.aliases = fileSettings.aliases || {};
   }
-  private validate(): void {
+  public validate(): void {
     const requiredSettings = ['token', 'client_id', 'mongodb_url', 'mongodb_name'];
     const missingSettings = requiredSettings.filter(setting => !this[setting as keyof this]);
     if (missingSettings.length > 0) {
