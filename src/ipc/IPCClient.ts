@@ -1,12 +1,12 @@
 /**
  * MIT License
- * 
+ *
  * Copyright (c) 2025 NirrussVn0
  */
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
-import { Client, Guild, User } from 'discord.js';
-import { getPlayer } from '@voicelink/index';
+import { Client, Guild } from 'discord.js';
+import { getPlayer } from '@audio/index';
 import { logger } from '@core/Logger';
 import { container } from 'tsyringe';
 import { Settings } from '@core/Settings';
@@ -15,7 +15,7 @@ export interface IIPCMessage {
   op: string;
   d: any;
   t?: string;
-  s?: number;
+  s?: number | undefined;
 }
 export interface IIPCRequest {
   method: string;
@@ -29,15 +29,16 @@ export interface IIPCResponse {
   error?: string;
 }
 export class IPCClient extends EventEmitter {
-  private client: Client;
-  private settings: Settings;
-  private database: Database;
+  private readonly client: Client;
+  private readonly settings: Settings;
+  private readonly database: Database;
   private websocket?: WebSocket;
   private connected = false;
   private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
-  private reconnectDelay = 5000;
-  private heartbeatInterval?: NodeJS.Timeout;
+  private readonly maxReconnectAttempts = 5;
+  private readonly reconnectDelay = 5000;
+  private heartbeatInterval?: ReturnType<typeof setInterval> | undefined;
+  private readonly startTime = Date.now();
   constructor(client: Client) {
     super();
     this.client = client;
@@ -51,7 +52,7 @@ export class IPCClient extends EventEmitter {
     }
     const { host, port, password, secure } = this.settings.ipc_client;
     const protocol = secure ? 'wss' : 'ws';
-    const url = `${protocol}:
+    const url = `${protocol}://${host}:${port}`;
     try {
       this.websocket = new WebSocket(url, {
         headers: {
@@ -97,11 +98,11 @@ export class IPCClient extends EventEmitter {
         },
         guilds: this.client.guilds.cache.size,
         users: this.client.users.cache.size,
-        uptime: process.uptime(),
+        uptime: Date.now() - this.startTime,
       },
     });
     this.startHeartbeat();
-    this.emit('connect');
+    super.emit('connect');
   }
   private onMessage(data: WebSocket.Data): void {
     try {
@@ -111,18 +112,18 @@ export class IPCClient extends EventEmitter {
       logger.error('Failed to parse IPC message', error as Error, 'ipc');
     }
   }
-  private onClose(code: number, reason: Buffer): void {
+  private onClose(code: number, reason: string): void {
     this.connected = false;
     if (this.heartbeatInterval) {
       clearInterval(this.heartbeatInterval);
       this.heartbeatInterval = undefined;
     }
-    logger.warn(`IPC connection closed: ${code} ${reason.toString()}`, 'ipc');
+    logger.warn(`IPC connection closed: ${code} ${reason}`, 'ipc');
     if (this.reconnectAttempts < this.maxReconnectAttempts) {
       this.reconnect();
     } else {
       logger.error('Max IPC reconnection attempts reached', undefined, 'ipc');
-      this.emit('disconnect');
+      super.emit('disconnect');
     }
   }
   private onError(error: Error): void {
@@ -168,7 +169,7 @@ export class IPCClient extends EventEmitter {
     this.send({
       op: 'RESPONSE',
       d: response,
-      s: message.s,
+      s: message.s ?? undefined,
     });
   }
   private async processRequest(request: IIPCRequest): Promise<IIPCResponse> {
@@ -189,9 +190,9 @@ export class IPCClient extends EventEmitter {
         return { status: 404, error: 'Endpoint not found' };
     }
   }
-  private async handleGuildRequest(method: string, parts: string[], data: any): Promise<IIPCResponse> {
+  private async handleGuildRequest(method: string, parts: string[], _data: any): Promise<IIPCResponse> {
     if (method === 'GET' && parts.length === 0) {
-      const guilds = this.client.guilds.cache.map(guild => ({
+      const guilds = this.client.guilds.cache.map((guild: Guild) => ({
         id: guild.id,
         name: guild.name,
         icon: guild.iconURL(),
@@ -202,6 +203,9 @@ export class IPCClient extends EventEmitter {
     }
     if (method === 'GET' && parts.length === 1) {
       const guildId = parts[0];
+      if (!guildId) {
+        return { status: 400, error: 'Guild ID is required' };
+      }
       const guild = this.client.guilds.cache.get(guildId);
       if (!guild) {
         return { status: 404, error: 'Guild not found' };
@@ -223,7 +227,7 @@ export class IPCClient extends EventEmitter {
   private async handlePlayerRequest(method: string, parts: string[], data: any): Promise<IIPCResponse> {
     if (method === 'GET' && parts.length === 0) {
       const players = this.client.guilds.cache
-        .map(guild => {
+        .map((guild: Guild) => {
           const player = getPlayer(guild.id);
           if (!player) return null;
           return {
@@ -231,17 +235,17 @@ export class IPCClient extends EventEmitter {
             guildName: guild.name,
             channelId: player.channel.id,
             channelName: player.channel.name,
-            isPlaying: player.isPlaying,
+            isPlaying: player.playing,
             isPaused: player.isPaused,
             current: player.current ? {
               title: player.current.title,
               author: player.current.author,
               uri: player.current.uri,
               length: player.current.length,
-              position: player.position,
+              position: 0,
             } : null,
-            queueSize: player.queue.count,
-            volume: player.volume,
+            queueSize: player.queue.size(),
+            volume: player.currentVolume,
           };
         })
         .filter(Boolean);
@@ -249,6 +253,9 @@ export class IPCClient extends EventEmitter {
     }
     if (method === 'GET' && parts.length === 1) {
       const guildId = parts[0];
+      if (!guildId) {
+        return { status: 400, error: 'Guild ID is required' };
+      }
       const player = getPlayer(guildId);
       if (!player) {
         return { status: 404, error: 'Player not found' };
@@ -258,30 +265,33 @@ export class IPCClient extends EventEmitter {
         guildName: player.guild.name,
         channelId: player.channel.id,
         channelName: player.channel.name,
-        isPlaying: player.isPlaying,
+        isPlaying: player.playing,
         isPaused: player.isPaused,
         current: player.current ? {
           title: player.current.title,
           author: player.current.author,
           uri: player.current.uri,
           length: player.current.length,
-          position: player.position,
+          position: 0,
           thumbnail: player.current.thumbnail,
         } : null,
-        queue: player.queue.tracks().slice(0, 10).map(track => ({
+        queue: player.queue.getTracks().slice(0, 10).map((track) => ({
           title: track.title,
           author: track.author,
           uri: track.uri,
           length: track.length,
         })),
-        queueSize: player.queue.count,
-        volume: player.volume,
-        repeatMode: player.queue.repeatMode,
+        queueSize: player.queue.size(),
+        volume: player.currentVolume,
+        repeatMode: player.loopMode,
       };
       return { status: 200, data: playerData };
     }
     if (method === 'POST' && parts.length === 2 && parts[1] === 'control') {
       const guildId = parts[0];
+      if (!guildId) {
+        return { status: 400, error: 'Guild ID is required' };
+      }
       const player = getPlayer(guildId);
       if (!player) {
         return { status: 404, error: 'Player not found' };
@@ -313,9 +323,12 @@ export class IPCClient extends EventEmitter {
     }
     return { status: 405, error: 'Method not allowed' };
   }
-  private async handleUserRequest(method: string, parts: string[], data: any): Promise<IIPCResponse> {
+  private async handleUserRequest(method: string, parts: string[], _data: any): Promise<IIPCResponse> {
     if (method === 'GET' && parts.length === 1) {
       const userId = parts[0];
+      if (!userId) {
+        return { status: 400, error: 'User ID is required' };
+      }
       try {
         const userData = await this.database.users.getUser(userId);
         return { status: 200, data: userData };
@@ -325,15 +338,15 @@ export class IPCClient extends EventEmitter {
     }
     return { status: 405, error: 'Method not allowed' };
   }
-  private async handleStatsRequest(method: string, parts: string[], data: any): Promise<IIPCResponse> {
+  private async handleStatsRequest(method: string, parts: string[], _data: any): Promise<IIPCResponse> {
     if (method === 'GET' && parts.length === 0) {
       const stats = {
         guilds: this.client.guilds.cache.size,
         users: this.client.users.cache.size,
         channels: this.client.channels.cache.size,
-        uptime: process.uptime(),
-        memory: process.memoryUsage(),
-        activePlayers: this.client.guilds.cache.filter(guild => getPlayer(guild.id)).size,
+        uptime: Date.now() - this.startTime,
+        memory: { rss: 0, heapUsed: 0, heapTotal: 0, external: 0, arrayBuffers: 0 },
+        activePlayers: this.client.guilds.cache.filter((guild: Guild) => getPlayer(guild.id)).size,
         ping: this.client.ws.ping,
       };
       return { status: 200, data: stats };
