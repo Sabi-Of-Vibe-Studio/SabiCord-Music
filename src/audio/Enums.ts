@@ -74,4 +74,6 @@ export enum FilterType {
 
 export enum LoopType {
   NONE = 'none',
+  TRACK = 'track',
+  QUEUE = 'queue',
 }
