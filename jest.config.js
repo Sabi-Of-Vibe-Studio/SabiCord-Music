@@ -1,0 +1,30 @@
+module.exports = {
+  preset: 'ts-jest',
+  testEnvironment: 'node',
+  roots: ['<rootDir>/src', '<rootDir>/tests'],
+  testMatch: ['**/__tests__/**/*.ts', '**/?(*.)+(spec|test).ts'],
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
+  },
+  collectCoverageFrom: [
+    'src/**/*.ts',
+    '!src/**/*.d.ts',
+    '!src/index.ts',
+  ],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  moduleNameMapping: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@core/(.*)$': '<rootDir>/src/core/$1',
+    '^@interfaces/(.*)$': '<rootDir>/src/interfaces/$1',
+    '^@audio/(.*)$': '<rootDir>/src/audio/$1',
+    '^@commands/(.*)$': '<rootDir>/src/commands/$1',
+    '^@views/(.*)$': '<rootDir>/src/views/$1',
+    '^@ipc/(.*)$': '<rootDir>/src/ipc/$1',
+    '^@localization/(.*)$': '<rootDir>/src/localization/$1',
+    '^@addons/(.*)$': '<rootDir>/src/addons/$1',
+    '^@utils/(.*)$': '<rootDir>/src/utils/$1',
+  },
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ts'],
+  testTimeout: 10000,
+};

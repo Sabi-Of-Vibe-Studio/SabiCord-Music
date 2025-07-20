@@ -1,0 +1,63 @@
+version: '3.8'
+
+services:
+  sabicord-bot:
+    build: .
+    container_name: sabicord-music-bot
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - MONGODB_URL=${MONGODB_URL}
+      - MONGODB_NAME=${MONGODB_NAME}
+      - BOT_PREFIX=${BOT_PREFIX:-!}
+      - EMBED_COLOR=${EMBED_COLOR:-0x00ff00}
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    networks:
+      - sabicord-network
+    depends_on:
+      - mongodb
+    healthcheck:
+      test: ["CMD", "node", "-e", "console.log('Health check')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  mongodb:
+    image: mongo:6.0
+    container_name: sabicord-mongodb
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_ROOT_USERNAME:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_ROOT_PASSWORD:-password}
+      - MONGO_INITDB_DATABASE=${MONGODB_NAME:-sabicord}
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d
+    ports:
+      - "27017:27017"
+    networks:
+      - sabicord-network
+
+  lavalink:
+    image: fredboat/lavalink:dev
+    container_name: sabicord-lavalink
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=2333
+      - LAVALINK_SERVER_PASSWORD=${LAVALINK_PASSWORD:-youshallnotpass}
+    volumes:
+      - ./lavalink/application.yml:/opt/Lavalink/application.yml
+    ports:
+      - "2333:2333"
+    networks:
+      - sabicord-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  sabicord-network:
+    driver: bridge
