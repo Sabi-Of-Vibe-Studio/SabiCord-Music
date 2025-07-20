@@ -76,6 +76,22 @@ export abstract class BaseQueue {
   public getTotalDuration(): number {
     return this.tracks.reduce((total, track) => total + track.length, 0);
   }
+  public get count(): number {
+    return this.size();
+  }
+  public tracks(): Track[] {
+    return this.getTracks();
+  }
+  public get formattedLength(): string {
+    const totalMs = this.getTotalDuration();
+    const hours = Math.floor(totalMs / 3600000);
+    const minutes = Math.floor((totalMs % 3600000) / 60000);
+    const seconds = Math.floor((totalMs % 60000) / 1000);
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  }
   protected hasDuplicate(track: Track): boolean {
     return this.tracks.some(t => t.identifier === track.identifier);
   }
@@ -101,6 +117,12 @@ export class Queue extends BaseQueue {
       return null;
     }
     return this.tracks.shift() || null;
+  }
+  public skipTo(position: number): void {
+    if (position < 1 || position > this.tracks.length) {
+      throw new QueueException('Invalid position');
+    }
+    this.tracks.splice(0, position - 1);
   }
 }
 export class FairQueue extends BaseQueue {

@@ -185,7 +185,7 @@ export class BasicCommands {
     }
     if (!player.isPrivileged(interaction.user)) {
       player.skipVotes.add(interaction.user);
-      const required = player.requiredVotes();
+      const required = player.getRequiredVotes();
       if (player.skipVotes.size < required) {
         await interaction.reply({
           content: `🗳️ Vote to skip registered! (${player.skipVotes.size}/${required})`,
@@ -195,7 +195,9 @@ export class BasicCommands {
     }
     const currentTrack = player.current;
     if (count > 1) {
-      player.queue.skipTo(count - 1);
+      for (let i = 0; i < count - 1; i++) {
+        player.queue.poll();
+      }
     }
     await player.stop();
     await interaction.reply({ 
@@ -218,7 +220,7 @@ export class BasicCommands {
     }
     if (!player.isPrivileged(interaction.user)) {
       player.stopVotes.add(interaction.user);
-      const required = player.requiredVotes();
+      const required = player.getRequiredVotes();
       if (player.stopVotes.size < required) {
         await interaction.reply({
           content: `🗳️ Vote to stop registered! (${player.stopVotes.size}/${required})`,
@@ -311,7 +313,7 @@ export class BasicCommands {
                    action === 'skip' ? player.skipVotes :
                    player.stopVotes;
     voteSet.add(interaction.user);
-    const required = player.requiredVotes();
+    const required = player.getRequiredVotes();
     if (voteSet.size < required) {
       return {
         shouldExecute: false,

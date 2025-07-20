@@ -15,8 +15,8 @@ import {
   ButtonBuilder,
   ButtonStyle,
 } from 'discord.js';
-import { Track } from '@voicelink/Track';
-import { Player } from '@voicelink/Player';
+import { Track } from '@audio/Track';
+import { Player } from '@audio/Player';
 import { Utils } from '@core/Utils';
 import { logger } from '@core/Logger';
 export interface ISearchViewOptions {

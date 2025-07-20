@@ -5,7 +5,7 @@
  */
 import 'reflect-metadata';
 import { GatewayIntentBits } from 'discord.js';
-import { Client as DiscordXClient } from '@discordx/discordx';
+import { Client as DiscordXClient } from 'discordx';
 import { IDiscordClient, IServiceInitializer } from '../interfaces/IClient';
 import { ILogger, LoggerFactory } from './Logger';
 import { ServiceContainer } from './ServiceContainer';

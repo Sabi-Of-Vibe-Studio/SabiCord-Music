@@ -14,7 +14,7 @@ import {
 } from 'discord.js';
 import { Discord, Slash, SlashOption, SlashGroup } from 'discordx';
 import { injectable, container } from 'tsyringe';
-import { getPlayer } from '@voicelink/index';
+import { getPlayer } from '@audio/index';
 import { Database } from '@core/Database';
 import { Settings } from '@core/Settings';
 import { logger } from '@core/Logger';

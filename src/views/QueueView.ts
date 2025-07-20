@@ -13,8 +13,8 @@ import {
   Message,
   User,
 } from 'discord.js';
-import { Player } from '@voicelink/Player';
-import { Track } from '@voicelink/Track';
+import { Player } from '@audio/Player';
+import { Track } from '@audio/Track';
 import { Utils } from '@core/Utils';
 import { logger } from '@core/Logger';
 export interface IQueueViewOptions {

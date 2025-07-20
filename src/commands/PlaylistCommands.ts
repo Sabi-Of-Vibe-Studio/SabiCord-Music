@@ -95,7 +95,7 @@ export class PlaylistCommands {
     }
     if (!player.isPrivileged(interaction.user)) {
       player.shuffleVotes.add(interaction.user);
-      const required = player.requiredVotes();
+      const required = player.getRequiredVotes();
       if (player.shuffleVotes.size < required) {
         await interaction.reply({
           content: `🗳️ Vote to shuffle registered! (${player.shuffleVotes.size}/${required})`,

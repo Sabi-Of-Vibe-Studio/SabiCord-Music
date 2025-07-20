@@ -142,17 +142,17 @@ export class HelpView {
         .setLabel('Support Server')
         .setEmoji('💬')
         .setStyle(ButtonStyle.Link)
-        .setURL('https:
+        .setURL('https://discord.gg/support'),
       new ButtonBuilder()
         .setLabel('Invite Bot')
         .setEmoji('➕')
         .setStyle(ButtonStyle.Link)
-        .setURL('https:
+        .setURL('https://discord.com/oauth2/authorize?client_id=YOUR_CLIENT_ID&permissions=8&scope=bot'),
       new ButtonBuilder()
         .setLabel('GitHub')
         .setEmoji('📚')
         .setStyle(ButtonStyle.Link)
-        .setURL('https:
+        .setURL('https://github.com/ChocoMeow/Vocard'),
       new ButtonBuilder()
         .setCustomId('help_close')
         .setLabel('Close')
@@ -228,7 +228,7 @@ export class HelpView {
             name: 'music play',
             description: 'Play a song or playlist from URL or search query',
             usage: 'music play <query> [start:time] [end:time]',
-            examples: ['music play Never Gonna Give You Up', 'music play https:
+            examples: ['music play Never Gonna Give You Up', 'music play https://youtube.com/watch?v=dQw4w9WgXcQ']
           },
           {
             name: 'music pause',

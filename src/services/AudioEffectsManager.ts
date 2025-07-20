@@ -3,8 +3,8 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { Filters } from '../voicelink/Filters';
-import { Node } from '../voicelink/Node';
+import { Filters } from '../audio/Filters';
+import { Node } from '../audio/Node';
 import { ILogger } from '../core/Logger';
 export class AudioEffectsManager {
   private filters: Filters;

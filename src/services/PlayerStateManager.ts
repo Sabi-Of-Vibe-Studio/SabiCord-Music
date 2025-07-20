@@ -3,7 +3,7 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { PlayerState } from '../voicelink/Enums';
+import { PlayerState } from '../audio/Enums';
 import { ILogger } from '../core/Logger';
 import { EventEmitter } from 'events';
 export class PlayerStateManager extends EventEmitter {

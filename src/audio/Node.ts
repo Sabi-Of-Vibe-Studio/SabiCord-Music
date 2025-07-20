@@ -53,15 +53,15 @@ export class Node extends EventEmitter {
   private stats?: INodeStats;
   private available = false;
   private reconnectAttempts = 0;
-  private heartbeatInterval?: NodeJS.Timeout;
+  private heartbeatInterval?: ReturnType<typeof setInterval> | undefined;
   public readonly identifier: string;
   public readonly host: string;
   public readonly port: number;
   public readonly password: string;
   public readonly secure: boolean;
   public readonly heartbeat: number;
-  public readonly resumeKey?: string;
-  public readonly region?: string;
+  public readonly resumeKey?: string | undefined;
+  public readonly region?: string | undefined;
   constructor(client: Client, options: INodeOptions) {
     super();
     this.client = client;
@@ -75,7 +75,7 @@ export class Node extends EventEmitter {
     this.region = options.region;
     this.logger = container.resolve<ILogger>('Logger');
     this.httpClient = axios.create({
-      baseURL: `http${this.secure ? 's' : ''}:
+      baseURL: `http${this.secure ? 's' : ''}://${this.host}:${this.port}/v4`,
       headers: {
         'Authorization': this.password,
         'User-Id': this.client.user?.id || '',
@@ -231,7 +231,7 @@ export class Node extends EventEmitter {
       this.logger.error(`Failed to parse WebSocket message`, error as Error, 'audio');
     }
   }
-  private handleReadyMessage(message: any): void {
+  private handleReadyMessage(_message: any): void {
     this.logger.debug(`Node [${this.identifier}] is ready`, 'audio');
     this.emit('ready');
   }
@@ -345,7 +345,7 @@ export class NodePool {
     return this.nodes;
   }
   public static get availableNodes(): Node[] {
-    return Array.from(this.nodes.values()).filter(node => node.available);
+    return Array.from(this.nodes.values()).filter(node => node.isAvailable);
   }
   public static async disconnectAll(): Promise<void> {
     const disconnectPromises = Array.from(this.nodes.values()).map(node => node.disconnect());
@@ -362,10 +362,10 @@ export class NodePool {
           prev.playerCount < current.playerCount ? prev : current
         );
       case NodeAlgorithm.BY_REGION:
-        return nodes[0];
+        return nodes[0]!;
       case NodeAlgorithm.BY_PING:
       default:
-        return nodes[0];
+        return nodes[0]!;
     }
   }
 }

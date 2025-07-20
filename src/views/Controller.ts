@@ -14,8 +14,8 @@ import {
   TextChannel,
   User,
 } from 'discord.js';
-import { Player } from '@voicelink/Player';
-import { LoopType } from '@voicelink/Enums';
+import { Player } from '@audio/Player';
+import { LoopType } from '@audio/Enums';
 import { Utils } from '@core/Utils';
 import { logger } from '@core/Logger';
 import { container } from 'tsyringe';

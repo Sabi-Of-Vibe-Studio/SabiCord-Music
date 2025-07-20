@@ -60,6 +60,10 @@ export class Player extends EventEmitter {
   private loop: LoopMode = LoopMode.NONE;
   private skipVotes = new Set<string>();
   private joinTime: number;
+  public readonly pauseVotes = new Set<User>();
+  public readonly resumeVotes = new Set<User>();
+  public readonly stopVotes = new Set<User>();
+  public readonly shuffleVotes = new Set<User>();
   public readonly guild: Guild;
   public readonly channel: VoiceChannel;
   public readonly node: Node;
@@ -249,6 +253,10 @@ export class Player extends EventEmitter {
     });
     this.logger.debug(`Filters applied in ${this.guild.name}`, 'audio');
   }
+  public async setFilters(filters: Filters): Promise<void> {
+    this.filters = filters;
+    await this.applyFilters();
+  }
   public addSkipVote(userId: string): boolean {
     this.skipVotes.add(userId);
     return this.skipVotes.size >= this.getRequiredVotes();
@@ -265,6 +273,19 @@ export class Player extends EventEmitter {
   public getRequiredVotes(): number {
     const voiceMembers = this.channel.members.filter(m => !m.user.bot).size;
     return Math.ceil(voiceMembers / 2);
+  }
+  public requiredVotes(): number {
+    return this.getRequiredVotes();
+  }
+  public isPrivileged(user: User): boolean {
+    const member = this.guild.members.cache.get(user.id);
+    if (!member) return false;
+    return member.permissions.has(['ManageChannels', 'Administrator']) ||
+           member.id === this.guild.ownerId ||
+           this.channel.members.size <= 2;
+  }
+  public isUserInChannel(user: User): boolean {
+    return this.channel.members.has(user.id);
   }
   public async destroy(): Promise<void> {
     try {

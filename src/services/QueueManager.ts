@@ -3,9 +3,9 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { Track } from '../voicelink/Track';
-import { Queue, FairQueue } from '../voicelink/Queue';
-import { LoopType } from '../voicelink/Enums';
+import { Track } from '../audio/Track';
+import { Queue, FairQueue } from '../audio/Queue';
+import { LoopType } from '../audio/Enums';
 import { ILogger } from '../core/Logger';
 export class QueueManager {
   private queue: Queue;
