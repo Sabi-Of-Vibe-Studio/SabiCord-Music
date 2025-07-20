@@ -79,9 +79,6 @@ export abstract class BaseQueue {
   public get count(): number {
     return this.size();
   }
-  public tracks(): Track[] {
-    return this.getTracks();
-  }
   public get formattedLength(): string {
     const totalMs = this.getTotalDuration();
     const hours = Math.floor(totalMs / 3600000);
