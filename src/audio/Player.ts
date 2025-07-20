@@ -58,12 +58,13 @@ export class Player extends EventEmitter {
   private paused = false;
   private connected = false;
   private loop: LoopMode = LoopMode.NONE;
-  private skipVotes = new Set<string>();
+  private trackPosition = 0;
   private joinTime: number;
   public readonly pauseVotes = new Set<User>();
   public readonly resumeVotes = new Set<User>();
   public readonly stopVotes = new Set<User>();
   public readonly shuffleVotes = new Set<User>();
+  public readonly skipVotes = new Set<User>();
   public readonly guild: Guild;
   public readonly channel: VoiceChannel;
   public readonly node: Node;
@@ -100,6 +101,12 @@ export class Player extends EventEmitter {
   }
   public get loopMode(): LoopMode {
     return this.loop;
+  }
+  public get position(): number {
+    return this.trackPosition;
+  }
+  public get volume(): number {
+    return this.currentVolume;
   }
   public get playerState(): PlayerState {
     return this.state;
@@ -257,15 +264,19 @@ export class Player extends EventEmitter {
     this.filters = filters;
     await this.applyFilters();
   }
-  public addSkipVote(userId: string): boolean {
-    this.skipVotes.add(userId);
+  public addSkipVote(user: User): boolean {
+    this.skipVotes.add(user);
     return this.skipVotes.size >= this.getRequiredVotes();
   }
-  public removeSkipVote(userId: string): void {
-    this.skipVotes.delete(userId);
+  public removeSkipVote(user: User): void {
+    this.skipVotes.delete(user);
   }
   public clearVotes(): void {
     this.skipVotes.clear();
+    this.pauseVotes.clear();
+    this.resumeVotes.clear();
+    this.stopVotes.clear();
+    this.shuffleVotes.clear();
   }
   public getSkipVotes(): number {
     return this.skipVotes.size;

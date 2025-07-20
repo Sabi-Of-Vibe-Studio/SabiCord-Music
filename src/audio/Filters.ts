@@ -53,14 +53,14 @@ export interface ILowPassSettings {
 export class Filters {
   private volume = 1.0;
   private equalizer: IEqualizerBand[] = [];
-  private karaoke?: IKaraokeSettings;
-  private timescale?: ITimescaleSettings;
-  private tremolo?: ITremoloSettings;
-  private vibrato?: IVibratoSettings;
-  private rotation?: IRotationSettings;
-  private distortion?: IDistortionSettings;
-  private channelMix?: IChannelMixSettings;
-  private lowPass?: ILowPassSettings;
+  private karaoke: IKaraokeSettings | undefined;
+  private timescale: ITimescaleSettings | undefined;
+  private tremolo: ITremoloSettings | undefined;
+  private vibrato: IVibratoSettings | undefined;
+  private rotation: IRotationSettings | undefined;
+  private distortion: IDistortionSettings | undefined;
+  private channelMix: IChannelMixSettings | undefined;
+  private lowPass: ILowPassSettings | undefined;
   public setVolume(volume: number): this {
     if (volume < 0 || volume > 5) {
       throw new InvalidFilterValue('Volume must be between 0 and 5');
@@ -167,6 +167,9 @@ export class Filters {
     return this;
   }
   public getAll(): any {
+    return this.toJSON();
+  }
+  public get filters(): any {
     return this.toJSON();
   }
   public toJSON(): any {

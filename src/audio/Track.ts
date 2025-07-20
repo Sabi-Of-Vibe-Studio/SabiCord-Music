@@ -88,6 +88,9 @@ export class Track {
   public get duration(): string {
     return this.isStream ? 'LIVE' : Utils.formatTime(this.length);
   }
+  public get formattedLength(): string {
+    return this.duration;
+  }
   public get formattedDuration(): string {
     if (this.isStream) return 'LIVE';
     const hours = Math.floor(this.length / 3600000);
