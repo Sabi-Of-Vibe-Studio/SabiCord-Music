@@ -15,10 +15,10 @@ import {
   ButtonBuilder,
   ButtonStyle,
 } from 'discord.js';
-import { Track } from '@audio/Track';
-import { Player } from '@audio/Player';
-import { Utils } from '@core/Utils';
-import { logger } from '@core/Logger';
+import { Track } from '../audio/Track';
+import { Player } from '../audio/Player';
+import { Utils } from '../core/Utils';
+import { logger } from '../core/Logger';
 export interface ISearchViewOptions {
   tracks: Track[];
   player: Player;

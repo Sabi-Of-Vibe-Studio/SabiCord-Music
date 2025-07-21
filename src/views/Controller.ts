@@ -14,12 +14,12 @@ import {
   TextChannel,
   User,
 } from 'discord.js';
-import { Player } from '@audio/Player';
-import { LoopType } from '@audio/Enums';
-import { Utils } from '@core/Utils';
-import { logger } from '@core/Logger';
+import { Player } from '../audio/Player';
+import { LoopType } from '../audio/Enums';
+import { Utils } from '../core/Utils';
+import { logger } from '../core/Logger';
 import { container } from 'tsyringe';
-import { Settings } from '@core/Settings';
+import { Settings } from '../core/Settings';
 export interface IControllerOptions {
   player: Player;
   channel: TextChannel;
