@@ -26,7 +26,8 @@ export abstract class BaseQueue {
     if (index < 0 || index >= this.tracks.length) {
       return null;
     }
-    return this.tracks.splice(index, 1)[0];
+    const removed = this.tracks.splice(index, 1)[0];
+    return removed || null;
   }
   public clear(): void {
     this.tracks = [];
@@ -34,7 +35,12 @@ export abstract class BaseQueue {
   public shuffle(): void {
     for (let i = this.tracks.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [this.tracks[i], this.tracks[j]] = [this.tracks[j], this.tracks[i]];
+      const temp = this.tracks[i];
+      const other = this.tracks[j];
+      if (temp && other) {
+        this.tracks[i] = other;
+        this.tracks[j] = temp;
+      }
     }
   }
   public size(): number {
@@ -45,9 +51,6 @@ export abstract class BaseQueue {
   }
   public isFull(): boolean {
     return this.tracks.length >= this.maxSize;
-  }
-  public getTracks(): Track[] {
-    return [...this.tracks];
   }
   public addAt(index: number, track: Track): void {
     if (this.isFull()) {
@@ -64,6 +67,9 @@ export abstract class BaseQueue {
       return false;
     }
     const track = this.tracks.splice(fromIndex, 1)[0];
+    if (!track) {
+      return false;
+    }
     this.tracks.splice(toIndex, 0, track);
     return true;
   }
@@ -72,6 +78,9 @@ export abstract class BaseQueue {
   }
   public filterTracks(predicate: (track: Track) => boolean): Track[] {
     return this.tracks.filter(predicate);
+  }
+  public getTracks(): Track[] {
+    return [...this.tracks];
   }
   public getTotalDuration(): number {
     return this.tracks.reduce((total, track) => total + track.length, 0);
@@ -154,20 +163,35 @@ export class FairQueue extends BaseQueue {
     }
     return track || null;
   }
-  public clear(): void {
+  public override clear(): void {
     super.clear();
     this.userTrackCounts.clear();
   }
   public getUserTrackCount(userId: string): number {
     return this.userTrackCounts.get(userId) || 0;
   }
-  private calculateFairInsertPosition(userId: string, userCount: number): number {
+  public skipTo(position: number): void {
+    if (position < 1 || position > this.tracks.length) {
+      throw new QueueException('Invalid position');
+    }
+    const removedTracks = this.tracks.splice(0, position - 1);
+    for (const track of removedTracks) {
+      if (track) {
+        const userId = track.requester.id;
+        const currentCount = this.userTrackCounts.get(userId) || 0;
+        this.userTrackCounts.set(userId, Math.max(0, currentCount - 1));
+      }
+    }
+  }
+  private calculateFairInsertPosition(_userId: string, userCount: number): number {
     if (this.tracks.length === 0) {
       return 0;
     }
     let insertIndex = this.tracks.length;
     for (let i = 0; i < this.tracks.length; i++) {
-      const trackUserId = this.tracks[i].requester.id;
+      const track = this.tracks[i];
+      if (!track) continue;
+      const trackUserId = track.requester.id;
       const trackUserCount = this.userTrackCounts.get(trackUserId) || 0;
       if (userCount < trackUserCount) {
         insertIndex = i;
