@@ -12,7 +12,7 @@ import {
   VoiceChannel,
   TextChannel
 } from 'discord.js';
-import { Discord, Slash, SlashOption, SlashGroup } from 'discordx';
+import { Discord, Slash, SlashOption, SlashChoice,SlashGroup } from 'discordx';
 import { injectable, container } from 'tsyringe';
 import { getPlayer, connectChannel } from '@audio/index';
 import { Database } from '@core/Database';
@@ -67,23 +67,21 @@ export class SettingsCommands {
   }
   @Slash({ description: 'Set the language for this server' })
   async language(
+    @SlashChoice({ name: "English", value: "EN" })
+    @SlashChoice({ name: "Spanish", value: "ES" })
+    @SlashChoice({ name: "French", value: "FR" })
+    @SlashChoice({ name: "German", value: "DE" })
+    @SlashChoice({ name: "Japanese", value: "JA" })
+    @SlashChoice({ name: "Korean", value: "KO" })
+    @SlashChoice({ name: "Chinese", value: "CH" })
+    @SlashChoice({ name: "Russian", value: "RU" })
+    @SlashChoice({ name: "Polish", value: "PL" })
+    @SlashChoice({ name: "Ukrainian", value: "UA" })
     @SlashOption({
       description: 'Language code',
       name: 'language',
       required: false,
       type: ApplicationCommandOptionType.String,
-      choices: [
-        { name: 'English', value: 'EN' },
-        { name: 'Spanish', value: 'ES' },
-        { name: 'French', value: 'FR' },
-        { name: 'German', value: 'DE' },
-        { name: 'Japanese', value: 'JA' },
-        { name: 'Korean', value: 'KO' },
-        { name: 'Chinese', value: 'CH' },
-        { name: 'Russian', value: 'RU' },
-        { name: 'Polish', value: 'PL' },
-        { name: 'Ukrainian', value: 'UA' },
-      ],
     })
     interaction: CommandInteraction,
     language?: string
