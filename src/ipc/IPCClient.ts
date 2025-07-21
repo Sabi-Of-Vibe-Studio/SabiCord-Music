@@ -33,7 +33,7 @@ export class IPCClient extends EventEmitter {
   private readonly client: Client;
   private readonly settings: Settings;
   private readonly database: Database;
-  private websocket?: WebSocket;
+  private websocket?: WebSocket | undefined;
   private connected = false;
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 5;
