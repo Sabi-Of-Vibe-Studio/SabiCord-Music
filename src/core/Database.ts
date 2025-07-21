@@ -88,7 +88,6 @@ class DatabaseConnection implements IDatabaseConnection {
 }
 class GuildSettingsRepository implements IGuildSettingsRepository {
   private collection: Collection<IGuildSettings>;
-  // private cache: CacheManager<IGuildSettings>;
   private cache: ICacheManager<IGuildSettings>   
   constructor(db: Db, cache: ICacheManager<IGuildSettings>) {
     this.collection = db.collection<IGuildSettings>('Settings');
