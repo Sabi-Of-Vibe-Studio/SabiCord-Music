@@ -27,19 +27,19 @@
     "emitDecoratorMetadata": true,
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
-    "baseUrl": "./src",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["*"],
-      "@core/*": ["core/*"],
-      "@interfaces/*": ["interfaces/*"],
-      "@audio/*": ["audio/*"],
-      "@commands/*": ["commands/*"],
-      "@views/*": ["views/*"],
-      "@ipc/*": ["ipc/*"],
-      "@localization/*": ["localization/*"],
-      "@addons/*": ["addons/*"],
-      "@utils/*": ["utils/*"],
-      "@types/*": ["types/*"]
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@interfaces/*": ["src/interfaces/*"],
+      "@audio/*": ["src/audio/*"],
+      "@commands/*": ["src/commands/*"],
+      "@views/*": ["src/views/*"],
+      "@ipc/*": ["src/ipc/*"],
+      "@localization/*": ["src/localization/*"],
+      "@addons/*": ["src/addons/*"],
+      "@utils/*": ["src/utils/*"],
+      "@types/*": ["src/types/*"]
     }
   },
   "include": [
