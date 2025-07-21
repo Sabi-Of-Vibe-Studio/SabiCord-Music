@@ -9,7 +9,7 @@ import {
   StringSelectMenuOptionBuilder,
   EmbedBuilder,
   StringSelectMenuInteraction,
-  ComponentType,
+
   Message,
   User,
   ButtonBuilder,
@@ -31,15 +31,15 @@ export class SearchView {
   private player: Player;
   private user: User;
   private query: string;
-  private maxResults: number;
-  private message?: Message;
+
+  private message?: Message | undefined;
   private selectedTracks: Track[] = [];
   constructor(options: ISearchViewOptions) {
     this.tracks = options.tracks.slice(0, options.maxResults || 10);
     this.player = options.player;
     this.user = options.user;
     this.query = options.query;
-    this.maxResults = options.maxResults || 10;
+
   }
   public async send(channel: any): Promise<Message> {
     const embed = this.createEmbed();
@@ -50,7 +50,7 @@ export class SearchView {
         components,
       });
       this.setupInteractionCollector();
-      return this.message;
+      return this.message!;
     } catch (error) {
       logger.error('Failed to send search view', error as Error, 'search');
       throw error;
@@ -159,7 +159,7 @@ export class SearchView {
     });
     collector.on('end', async () => {
       try {
-        if (this.message && !this.message.deleted) {
+        if (this.message) {
           await this.message.edit({
             components: [],
           });
@@ -171,7 +171,7 @@ export class SearchView {
   }
   private async handleSelectMenu(interaction: StringSelectMenuInteraction): Promise<void> {
     const selectedIndices = interaction.values.map(value => parseInt(value));
-    this.selectedTracks = selectedIndices.map(index => this.tracks[index]);
+    this.selectedTracks = selectedIndices.map(index => this.tracks[index]).filter(track => track !== undefined);
     await interaction.deferUpdate();
     await this.update();
   }
