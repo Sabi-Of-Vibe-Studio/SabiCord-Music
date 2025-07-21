@@ -15,7 +15,7 @@ import {
   User,
 } from 'discord.js';
 import { Player } from '../audio/Player';
-import { LoopType } from '../audio/Enums';
+import { LoopMode } from '../audio/Enums';
 import { Utils } from '../core/Utils';
 import { logger } from '../core/Logger';
 import { container } from 'tsyringe';
@@ -29,9 +29,9 @@ export interface IControllerOptions {
 export class MusicController {
   private player: Player;
   private channel: TextChannel;
-  private message?: Message;
+  private message?: Message | undefined;
   private settings: Settings;
-  private updateInterval?: NodeJS.Timeout;
+  private updateInterval?: NodeJS.Timeout | undefined;
   constructor(options: IControllerOptions) {
     this.player = options.player;
     this.channel = options.channel;
@@ -89,16 +89,16 @@ export class MusicController {
       const position = Utils.formatTime(this.player.position);
       const duration = track.formattedLength;
       embed
-        .setColor(this.getTrackColor(track.source))
+        .setColor(this.getTrackColor(track.source) as any)
         .setTitle('🎵 Now Playing')
         .setDescription(`**[${track.title}](${track.uri})**`)
         .addFields([
           { name: 'Artist', value: track.author, inline: true },
           { name: 'Requested by', value: `${track.requester}`, inline: true },
           { name: 'Duration', value: `${position} / ${duration}`, inline: true },
-          { name: 'Volume', value: `${this.player.volume}%`, inline: true },
+          { name: 'Volume', value: `${this.player.currentVolume}%`, inline: true },
           { name: 'Queue', value: `${this.player.queue.count} tracks`, inline: true },
-          { name: 'Loop', value: this.player.queue.repeatModeString, inline: true },
+          { name: 'Loop', value: this.getLoopModeString(), inline: true },
           { name: 'Progress', value: progress, inline: false },
         ]);
       if (track.thumbnail) {
@@ -151,7 +151,7 @@ export class MusicController {
         .setCustomId('controller_shuffle')
         .setEmoji('🔀')
         .setStyle(ButtonStyle.Secondary)
-        .setDisabled(this.player.queue.isEmpty),
+        .setDisabled(this.player.queue.isEmpty()),
       new ButtonBuilder()
         .setCustomId('controller_repeat')
         .setEmoji(this.getRepeatEmoji())
@@ -350,10 +350,11 @@ export class MusicController {
     });
   }
   private async handleRepeat(interaction: ButtonInteraction): Promise<void> {
-    const oldMode = this.player.queue.repeatMode;
-    const newMode = this.player.queue.nextRepeat();
+    const oldMode = this.player.loopMode;
+    const newMode = this.getNextLoopMode(oldMode);
+    this.player.setLoop(newMode);
     await interaction.reply({
-      content: `🔁 Repeat mode: **${this.getRepeatModeString(newMode)}**`,
+      content: `🔁 Repeat mode: **${this.getLoopModeString()}**`,
       ephemeral: true,
     });
   }
@@ -365,7 +366,7 @@ export class MusicController {
       });
       return;
     }
-    const newVolume = Math.min(this.player.volume + 10, 100);
+    const newVolume = Math.min(this.player.currentVolume + 10, 100);
     await this.player.setVolume(newVolume);
     await interaction.reply({
       content: `🔊 Volume: **${newVolume}%**`,
@@ -380,7 +381,7 @@ export class MusicController {
       });
       return;
     }
-    const newVolume = Math.max(this.player.volume - 10, 0);
+    const newVolume = Math.max(this.player.currentVolume - 10, 0);
     await this.player.setVolume(newVolume);
     await interaction.reply({
       content: `🔉 Volume: **${newVolume}%**`,
@@ -418,32 +419,44 @@ export class MusicController {
     const progress = Math.floor((this.player.position / this.player.current.length) * 20);
     return '▰'.repeat(Math.max(0, progress)) + '▱'.repeat(Math.max(0, 20 - progress));
   }
+  private getLoopModeString(): string {
+    switch (this.player.loopMode) {
+      case LoopMode.NONE:
+        return 'Off';
+      case LoopMode.TRACK:
+        return 'Track';
+      case LoopMode.QUEUE:
+        return 'Queue';
+      default:
+        return 'Off';
+    }
+  }
+  private getNextLoopMode(currentMode: LoopMode): LoopMode {
+    switch (currentMode) {
+      case LoopMode.NONE:
+        return LoopMode.TRACK;
+      case LoopMode.TRACK:
+        return LoopMode.QUEUE;
+      case LoopMode.QUEUE:
+        return LoopMode.NONE;
+      default:
+        return LoopMode.NONE;
+    }
+  }
   private getTrackColor(source: string): string {
     const sourceInfo = Utils.getSourceInfo(source, this.settings.sources_settings);
     return sourceInfo.color;
   }
   private getRepeatEmoji(): string {
-    switch (this.player.queue.repeatMode) {
-      case LoopType.OFF:
+    switch (this.player.loopMode) {
+      case LoopMode.NONE:
         return '🔁';
-      case LoopType.TRACK:
+      case LoopMode.TRACK:
         return '🔂';
-      case LoopType.QUEUE:
+      case LoopMode.QUEUE:
         return '🔁';
       default:
         return '🔁';
-    }
-  }
-  private getRepeatModeString(mode: LoopType): string {
-    switch (mode) {
-      case LoopType.OFF:
-        return 'Off';
-      case LoopType.TRACK:
-        return 'Track';
-      case LoopType.QUEUE:
-        return 'Queue';
-      default:
-        return 'Off';
     }
   }
   private setupEventListeners(): void {
@@ -454,7 +467,7 @@ export class MusicController {
   }
   private startUpdateInterval(): void {
     this.updateInterval = setInterval(() => {
-      if (this.player.isPlaying && this.player.current) {
+      if (this.player.playing && this.player.current) {
         this.update();
       }
     }, 10000); 
