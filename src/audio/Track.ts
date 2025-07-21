@@ -5,9 +5,8 @@
  */
 import { User } from 'discord.js';
 import { SearchType } from './Enums';
-import { Utils } from '@core/Utils';
-import { container } from 'tsyringe';
-import { Settings } from '@core/Settings';
+import { Utils } from '../core/Utils';
+
 export interface ITrackInfo {
   identifier: string;
   title: string;

@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2025 NirrussVn0
  */
+import 'module-alias/register';
 import 'reflect-metadata';
 import { SabiCordMusicClient } from './core/RefactoredMusicClient';
 const nodeProcess = eval('process');

@@ -24,12 +24,9 @@ export class SabiCordMusicClient extends DiscordXClient implements IDiscordClien
     super({
       intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers,
       ],
-      silent: false,
+      silent: true,
       simpleCommand: {
         prefix: '?',
       },
@@ -75,7 +72,7 @@ export class SabiCordMusicClient extends DiscordXClient implements IDiscordClien
     }
     this.serviceContainer.registerClient(this);
   }
-  public isReady(): boolean {
+  public override isReady(): this is DiscordXClient<true> {
     return this.readyAt !== null;
   }
   public async shutdown(): Promise<void> {

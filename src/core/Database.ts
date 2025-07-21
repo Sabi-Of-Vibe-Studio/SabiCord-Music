@@ -3,6 +3,7 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
+
 import { MongoClient, Db, Collection } from 'mongodb';
 import { 
   IDatabase, 
@@ -14,6 +15,7 @@ import {
 } from '@interfaces/IDatabase';
 import { IGuildSettings, IUserData } from '@interfaces/ISettings';
 import { logger } from './Logger';
+
 class CacheManager<T> implements ICacheManager<T> {
   private cache = new Map<string, { value: T; expires?: number }>();
   get(key: string): T | undefined {
@@ -27,7 +29,7 @@ class CacheManager<T> implements ICacheManager<T> {
   }
   set(key: string, value: T, ttl?: number): void {
     const expires = ttl ? Date.now() + ttl * 1000 : undefined;
-    this.cache.set(key, { value, expires });
+    this.cache.set(key, expires ? { value, expires } : { value });
   }
   delete(key: string): boolean {
     return this.cache.delete(key);
@@ -87,8 +89,8 @@ class DatabaseConnection implements IDatabaseConnection {
 }
 class GuildSettingsRepository implements IGuildSettingsRepository {
   private collection: Collection<IGuildSettings>;
-  private cache: CacheManager<IGuildSettings>;
-  constructor(db: Db, cache: CacheManager<IGuildSettings>) {
+  private cache: ICacheManager<IGuildSettings>   
+  constructor(db: Db, cache: ICacheManager<IGuildSettings>) {
     this.collection = db.collection<IGuildSettings>('Settings');
     this.cache = cache;
   }
@@ -128,12 +130,20 @@ class GuildSettingsRepository implements IGuildSettingsRepository {
   async getSettings(guildId: string): Promise<IGuildSettings> {
     const cacheKey = `settings:${guildId}`;
     let settings = this.cache.get(cacheKey);
+
     if (!settings) {
-      settings = await this.findOne({ _id: parseInt(guildId) });
-      if (!settings) {
+      const found = await this.findOne({ _id: parseInt(guildId) });
+
+      if (found) {
+        settings = found;
+      } else {
         settings = await this.createDefaultSettings(guildId);
       }
-      this.cache.set(cacheKey, settings, 300); 
+      this.cache.set(cacheKey, settings, 300);
+    }
+
+    if (!settings) {
+      throw new Error(`Settings not found for guild ID: ${guildId}`);
     }
     return settings;
   }
@@ -152,8 +162,8 @@ class GuildSettingsRepository implements IGuildSettingsRepository {
 }
 class UserRepository implements IUserRepository {
   private collection: Collection<IUserData>;
-  private cache: CacheManager<IUserData>;
-  constructor(db: Db, cache: CacheManager<IUserData>) {
+  private cache: ICacheManager<IUserData>;
+  constructor(db: Db, cache: ICacheManager<IUserData>) {
     this.collection = db.collection<IUserData>('Users');
     this.cache = cache;
   }
@@ -190,18 +200,26 @@ class UserRepository implements IUserRepository {
   async count(filter?: any): Promise<number> {
     return await this.collection.countDocuments(filter || {});
   }
-  async getUser(userId: string, dataType?: string): Promise<IUserData> {
-    const cacheKey = `user:${userId}`;
-    let user = this.cache.get(cacheKey);
-    if (!user) {
-      user = await this.findOne({ _id: parseInt(userId) });
-      if (!user) {
-        user = await this.createDefaultUser(userId);
-      }
-      this.cache.set(cacheKey, user, 300); 
+async getUser(userId: string, dataType?: string): Promise<IUserData> {
+  const cacheKey = `user:${userId}`;
+  let user = this.cache.get(cacheKey);
+
+  if (!user) {
+    const found = await this.findOne({ _id: parseInt(userId) });
+    if (found) {
+      user = found;
+    } else {
+      user = await this.createDefaultUser(userId);
     }
-    return user;
+    this.cache.set(cacheKey, user, 300);
   }
+
+  if (!user) {
+    throw new Error(`User not found with ID: ${userId}`);
+  }
+
+  return user;
+}
   async updateUser(userId: string, data: any): Promise<boolean> {
     const result = await this.updateOne({ _id: parseInt(userId) }, data);
     if (result) {
@@ -244,9 +262,9 @@ class UserRepository implements IUserRepository {
 }
 export class Database implements IDatabase {
   public connection: IDatabaseConnection;
-  public settings: IGuildSettingsRepository;
-  public users: IUserRepository;
-  private db: Db;
+  public settings!: IGuildSettingsRepository;
+  public users!: IUserRepository;
+  private db!: Db;
   private cache: IDatabaseCache;
   constructor(private url: string, private dbName: string) {
     this.connection = new DatabaseConnection(url);

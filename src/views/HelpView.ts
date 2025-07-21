@@ -15,7 +15,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
 } from 'discord.js';
-import { logger } from '@core/Logger';
+import { logger } from '../core/Logger';
 export interface IHelpViewOptions {
   user: User;
   prefix?: string;

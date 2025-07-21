@@ -13,10 +13,10 @@ import {
   Message,
   User,
 } from 'discord.js';
-import { Player } from '@audio/Player';
-import { Track } from '@audio/Track';
-import { Utils } from '@core/Utils';
-import { logger } from '@core/Logger';
+import { Player } from '../audio/Player';
+import { Track } from '../audio/Track';
+import { Utils } from '../core/Utils';
+import { logger } from '../core/Logger';
 export interface IQueueViewOptions {
   player: Player;
   user: User;

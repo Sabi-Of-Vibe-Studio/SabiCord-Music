@@ -8,12 +8,12 @@ import { Queue, FairQueue } from '../audio/Queue';
 import { LoopType } from '../audio/Enums';
 import { ILogger } from '../core/Logger';
 export class QueueManager {
-  private queue: Queue;
+  private queue: Queue | FairQueue;
   private logger: ILogger;
   private loopMode: LoopType = LoopType.NONE;
   private previousTrack: Track | null = null;
   constructor(queueType: 'Queue' | 'FairQueue', maxSize: number, logger: ILogger) {
-    this.queue = queueType === 'FairQueue' ? new FairQueue(maxSize) : new Queue(maxSize);
+    this.queue = queueType === 'FairQueue' ? new FairQueue({maxSize}) : new Queue({maxSize});
     this.logger = logger;
   }
   public addTrack(track: Track): void {
@@ -104,7 +104,7 @@ export class QueueManager {
   }
   public setLoopMode(mode: LoopType): void {
     this.loopMode = mode;
-    this.logger.debug(`Loop mode set to: ${LoopType[mode]}`, 'queue');
+    this.logger.debug(`Loop mode set to: ${mode}`, 'queue');
   }
   public getLoopMode(): LoopType {
     return this.loopMode;

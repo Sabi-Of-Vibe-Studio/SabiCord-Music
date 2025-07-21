@@ -4,10 +4,8 @@
  * Copyright (c) 2025 NirrussVn0
  */
 import { Client } from 'discord.js';
-import { importx } from '@discordx/importer';
 import { ICommandManager } from '../interfaces/IClient';
 import { ILogger } from '../core/Logger';
-import { join } from 'path';
 export class CommandService implements ICommandManager {
   private client: Client;
   private logger: ILogger;
@@ -17,8 +15,11 @@ export class CommandService implements ICommandManager {
   }
   public async importCommands(): Promise<void> {
     try {
-      const commandsPath = join(__dirname, '..', 'commands', '**', '*.{ts,js}');
-      await importx(commandsPath);
+      // Import commands explicitly to avoid dynamic import issues
+      await import('../commands/BasicCommands');
+      await import('../commands/EffectCommands');
+      await import('../commands/PlaylistCommands');
+      await import('../commands/SettingsCommands');
       this.logger.info('Commands imported successfully', 'commands');
     } catch (error) {
       this.logger.error('Failed to import commands', error as Error, 'commands');

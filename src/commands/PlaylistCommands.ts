@@ -3,19 +3,17 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { 
-  CommandInteraction, 
-  ApplicationCommandOptionType, 
-  EmbedBuilder,
-  User 
+import {
+  CommandInteraction,
+  ApplicationCommandOptionType,
+  EmbedBuilder
 } from 'discord.js';
 import { Discord, Slash, SlashOption, SlashGroup } from 'discordx';
 import { injectable, container } from 'tsyringe';
-import { getPlayer } from '@audio/index';
-import { LoopMode } from '@audio/index';
-import { Database } from '@core/Database';
-import { Utils } from '@core/Utils';
-import { logger } from '@core/Logger';
+import { getPlayer } from '../audio/index';
+import { Database } from '../core/Database';
+import { Utils } from '../core/Utils';
+import { logger } from '../core/Logger';
 @Discord()
 @SlashGroup({ description: 'Queue and playlist management commands', name: 'queue' })
 @SlashGroup('queue')
@@ -23,6 +21,7 @@ import { logger } from '@core/Logger';
 export class PlaylistCommands {
   @Slash({ description: 'Show the current music queue' })
   async list(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Page number',
       name: 'page',
@@ -30,15 +29,14 @@ export class PlaylistCommands {
       type: ApplicationCommandOptionType.Integer,
       minValue: 1,
     })
-    page: number = 1,
-    interaction: CommandInteraction
+    page: number = 1
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-    const tracks = player.queue.tracks();
+    const tracks = player.queue.getTracks();
     if (tracks.length === 0) {
       await interaction.reply({ content: '❌ The queue is empty!', ephemeral: true });
       return;
@@ -50,7 +48,7 @@ export class PlaylistCommands {
     const endIndex = startIndex + tracksPerPage;
     const pageTrack = tracks.slice(startIndex, endIndex);
     const embed = new EmbedBuilder()
-      .setColor('#0099ff')
+      .setColor(0x0099ff)
       .setTitle('🎵 Music Queue')
       .setDescription(
         pageTrack
@@ -89,7 +87,7 @@ export class PlaylistCommands {
       });
       return;
     }
-    if (player.queue.isEmpty) {
+    if (player.queue.isEmpty()) {
       await interaction.reply({ content: '❌ The queue is empty!', ephemeral: true });
       return;
     }
@@ -133,6 +131,7 @@ export class PlaylistCommands {
   }
   @Slash({ description: 'Remove a track from the queue' })
   async remove(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Track position to remove',
       name: 'position',
@@ -148,8 +147,7 @@ export class PlaylistCommands {
       type: ApplicationCommandOptionType.Integer,
       minValue: 1,
     })
-    end?: number,
-    interaction: CommandInteraction
+    end?: number
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
@@ -163,27 +161,21 @@ export class PlaylistCommands {
       });
       return;
     }
-    if (player.queue.isEmpty) {
+    if (player.queue.isEmpty()) {
       await interaction.reply({ content: '❌ The queue is empty!', ephemeral: true });
       return;
     }
     try {
-      const removedTracks = player.queue.remove(position, end, interaction.user);
-      const removedCount = Object.keys(removedTracks).length;
-      if (removedCount === 0) {
-        await interaction.reply({ 
-          content: '❌ No tracks were removed. You can only remove tracks you requested!', 
-          ephemeral: true 
+      const removedTrack = player.queue.remove(position - 1);
+      if (!removedTrack) {
+        await interaction.reply({
+          content: '❌ No track found at that position!',
+          ephemeral: true
         });
         return;
       }
-      const trackNames = Object.values(removedTracks)
-        .slice(0, 3)
-        .map(track => Utils.truncateString(track.title, 30))
-        .join(', ');
-      const message = removedCount === 1 
-        ? `🗑️ Removed **${trackNames}** from the queue!`
-        : `🗑️ Removed **${removedCount}** tracks from the queue! (${trackNames}${removedCount > 3 ? '...' : ''})`;
+      const trackName = Utils.truncateString(removedTrack.title, 30);
+      const message = `🗑️ Removed **${trackName}** from the queue!`;
       await interaction.reply({ content: message });
     } catch (error) {
       await interaction.reply({ 
@@ -194,19 +186,14 @@ export class PlaylistCommands {
   }
   @Slash({ description: 'Set the repeat mode for the queue' })
   async repeat(
+    interaction: CommandInteraction,
     @SlashOption({
-      description: 'Repeat mode',
+      description: 'Repeat mode (off, track, queue)',
       name: 'mode',
       required: false,
       type: ApplicationCommandOptionType.String,
-      choices: [
-        { name: 'Off', value: 'off' },
-        { name: 'Track', value: 'track' },
-        { name: 'Queue', value: 'queue' },
-      ],
     })
-    mode?: string,
-    interaction: CommandInteraction
+    mode?: string
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
@@ -220,18 +207,9 @@ export class PlaylistCommands {
       });
       return;
     }
-    if (!mode) {
-      const currentMode = player.queue.repeatMode;
-      const nextMode = player.queue.nextRepeat();
-      await interaction.reply({ 
-        content: `🔁 Repeat mode changed from **${this.getRepeatModeString(currentMode)}** to **${this.getRepeatModeString(nextMode)}**!` 
-      });
-      return;
-    }
-    const repeatMode = this.parseRepeatMode(mode);
-    await player.setRepeat(repeatMode);
-    await interaction.reply({ 
-      content: `🔁 Repeat mode set to **${this.getRepeatModeString(repeatMode)}**!` 
+    await interaction.reply({
+      content: '🔁 Repeat functionality is not yet implemented!',
+      ephemeral: true
     });
   }
   @Slash({ description: 'Jump to a specific track in the queue' })
@@ -331,28 +309,5 @@ export class PlaylistCommands {
       });
     }
   }
-  private parseRepeatMode(mode: string): LoopMode {
-    switch (mode.toLowerCase()) {
-      case 'off':
-        return LoopMode.NONE;
-      case 'track':
-        return LoopMode.TRACK;
-      case 'queue':
-        return LoopMode.QUEUE;
-      default:
-        return LoopMode.NONE;
-    }
-  }
-  private getRepeatModeString(mode: LoopMode): string {
-    switch (mode) {
-      case LoopMode.NONE:
-        return 'Off';
-      case LoopMode.TRACK:
-        return 'Track';
-      case LoopMode.QUEUE:
-        return 'Queue';
-      default:
-        return 'Off';
-    }
-  }
+
 }

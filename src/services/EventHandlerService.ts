@@ -3,23 +3,20 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { Client, Message, Interaction, Guild } from 'discord.js';
+import { Client, Interaction, Guild } from 'discord.js';
 import { IEventHandler } from '../interfaces/IClient';
 import { ILogger } from '../core/Logger';
 import { IBotConfig } from '../interfaces/ISettings';
 export class EventHandlerService implements IEventHandler {
   private client: Client;
   private logger: ILogger;
-  private botConfig: IBotConfig;
-  constructor(client: Client, logger: ILogger, botConfig: IBotConfig) {
+  constructor(client: Client, logger: ILogger, _botConfig: IBotConfig) {
     this.client = client;
     this.logger = logger;
-    this.botConfig = botConfig;
   }
   public setupEventHandlers(): void {
     this.client.on('ready', () => this.onReady());
     this.client.on('interactionCreate', (interaction) => this.onInteractionCreate(interaction));
-    this.client.on('messageCreate', (message) => this.onMessageCreate(message));
     this.client.on('guildCreate', (guild) => this.onGuildCreate(guild));
     this.client.on('guildDelete', (guild) => this.onGuildDelete(guild));
     this.client.on('error', (error) => this.onError(error));
@@ -42,16 +39,7 @@ export class EventHandlerService implements IEventHandler {
       this.logger.error('Error handling interaction', error as Error, 'events');
     }
   }
-  public async onMessageCreate(message: Message): Promise<void> {
-    try {
-      if (message.author.bot) return;
-      if (message.content.startsWith(this.botConfig.prefix)) {
-        this.logger.debug(`Prefix command received: ${message.content}`, 'events');
-      }
-    } catch (error) {
-      this.logger.error('Error handling message', error as Error, 'events');
-    }
-  }
+
   private async onGuildCreate(guild: Guild): Promise<void> {
     this.logger.info(`Joined guild: ${guild.name} (${guild.id})`, 'events');
   }
