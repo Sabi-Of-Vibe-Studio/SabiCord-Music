@@ -11,7 +11,7 @@ import { RequestMethod, NodeAlgorithm, LoadType } from './Enums';
 import { NodeException, NodeConnectionFailure, NodeNotAvailable } from './Exceptions';
 import { Track, Playlist } from './Track';
 import { Player } from './Player';
-import { ILogger } from '@core/Logger';
+import { ILogger } from '../core/Logger';
 import { container } from 'tsyringe';
 export interface INodeOptions {
   identifier: string;

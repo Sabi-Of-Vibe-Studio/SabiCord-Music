@@ -28,9 +28,9 @@ import {
   InvalidChannelPermissions,
   AudioException 
 } from './Exceptions';
-import { ILogger } from '@core/Logger';
+import { ILogger } from '../core/Logger';
 import { container } from 'tsyringe';
-import { Database } from '@core/Database';
+import { Database } from '../core/Database';
 export interface IPlayerOptions {
   guild: Guild;
   channel: VoiceChannel;
