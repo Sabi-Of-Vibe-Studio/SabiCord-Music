@@ -53,6 +53,12 @@
     "**/*.spec.ts"
   ],
   "ts-node": {
-    "require": ["tsconfig-paths/register"]
+    "require": ["tsconfig-paths/register"],
+    "esm": false,
+    "experimentalSpecifierResolution": "node",
+    "compilerOptions": {
+      "module": "commonjs",
+      "moduleResolution": "node"
+    }
   }
 }
