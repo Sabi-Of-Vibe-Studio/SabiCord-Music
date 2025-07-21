@@ -14,10 +14,10 @@ import {
 } from 'discord.js';
 import { Discord, Slash, SlashOption, SlashChoice,SlashGroup } from 'discordx';
 import { injectable, container } from 'tsyringe';
-import { getPlayer, connectChannel } from '@audio/index';
-import { Database } from '@core/Database';
-import { Settings } from '@core/Settings';
-import { logger } from '@core/Logger';
+import { getPlayer, connectChannel } from '../audio/index';
+import { Database } from '../core/Database';
+import { Settings } from '../core/Settings';
+import { logger } from '../core/Logger';
 @Discord()
 @SlashGroup({ description: 'Bot configuration and settings commands', name: 'settings' })
 @SlashGroup('settings')

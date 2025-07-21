@@ -3,10 +3,9 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { 
-  CommandInteraction, 
-  ApplicationCommandOptionType, 
-  EmbedBuilder 
+import {
+  CommandInteraction,
+  ApplicationCommandOptionType
 } from 'discord.js';
 import { Discord, Slash, SlashOption, SlashGroup } from 'discordx';
 import { injectable } from 'tsyringe';

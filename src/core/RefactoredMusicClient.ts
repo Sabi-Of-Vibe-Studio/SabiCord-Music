@@ -72,7 +72,7 @@ export class SabiCordMusicClient extends DiscordXClient implements IDiscordClien
     }
     this.serviceContainer.registerClient(this);
   }
-  public isReady(): boolean {
+  public override isReady(): this is DiscordXClient<true> {
     return this.readyAt !== null;
   }
   public async shutdown(): Promise<void> {

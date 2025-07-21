@@ -7,11 +7,11 @@
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
 import { Client, Guild } from 'discord.js';
-import { getPlayer } from '@audio/index';
-import { logger } from '@core/Logger';
+import { getPlayer } from '../audio/index';
+import { logger } from '../core/Logger';
 import { container } from 'tsyringe';
-import { Settings } from '@core/Settings';
-import { Database } from '@core/Database';
+import { Settings } from '../core/Settings';
+import { Database } from '../core/Database';
 export interface IIPCMessage {
   op: string;
   d: any;

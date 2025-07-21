@@ -4,8 +4,7 @@
  * Copyright (c) 2025 NirrussVn0
  */
 import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join } from 'path';
-import { User, Guild, CommandInteraction, Message } from 'discord.js';
+import { User } from 'discord.js';
 import { logger } from './Logger';
 export class Utils {
   static formatTime(millis: number): string {
@@ -24,11 +23,11 @@ export class Utils {
   static parseTime(timeString: string): number {
     try {
       const parts = timeString.split(':').map(part => parseInt(part, 10));
-      if (parts.length === 1) {
+      if (parts.length === 1 && parts[0] !== undefined) {
         return parts[0] * 1000;
-      } else if (parts.length === 2) {
+      } else if (parts.length === 2 && parts[0] !== undefined && parts[1] !== undefined) {
         return (parts[0] * 60 + parts[1]) * 1000;
-      } else if (parts.length === 3) {
+      } else if (parts.length === 3 && parts[0] !== undefined && parts[1] !== undefined && parts[2] !== undefined) {
         return (parts[0] * 3600 + parts[1] * 60 + parts[2]) * 1000;
       }
       return 0;

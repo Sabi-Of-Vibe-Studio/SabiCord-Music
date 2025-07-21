@@ -79,12 +79,12 @@
   },
   "homepage": "https://github.com/ChocoMeow/Vocard#readme",
   "_moduleAliases": {
-    "@audio": "dist/audio",
-    "@core": "dist/core",
-    "@commands": "dist/commands",
-    "@services": "dist/services",
-    "@interfaces": "dist/interfaces",
-    "@views": "dist/views",
-    "@ipc": "dist/ipc"
+    "@audio": "./dist/audio",
+    "@core": "./dist/core",
+    "@commands": "./dist/commands",
+    "@services": "./dist/services",
+    "@interfaces": "./dist/interfaces",
+    "@views": "./dist/views",
+    "@ipc": "./dist/ipc"
   }
 }

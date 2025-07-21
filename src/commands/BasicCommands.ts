@@ -6,13 +6,12 @@
 import {
   CommandInteraction,
   ApplicationCommandOptionType,
-  EmbedBuilder,
-  User
+  EmbedBuilder
 } from 'discord.js';
 import { Discord, Slash, SlashOption, SlashGroup } from 'discordx';
 import { injectable } from 'tsyringe';
 import { connectChannel, getPlayer, searchTracks } from '../audio/index';
-import { Track, Playlist, SearchType, LoopMode } from '../audio/index';
+import { Track, SearchType } from '../audio/index';
 import { Utils } from '../core/Utils';
 import { logger } from '../core/Logger';
 @Discord()
