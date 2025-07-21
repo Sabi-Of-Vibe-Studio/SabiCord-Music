@@ -24,12 +24,9 @@ export class SabiCordMusicClient extends DiscordXClient implements IDiscordClien
     super({
       intents: [
         GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
         GatewayIntentBits.GuildVoiceStates,
-        GatewayIntentBits.MessageContent,
-        GatewayIntentBits.GuildMembers,
       ],
-      silent: false,
+      silent: true,
       simpleCommand: {
         prefix: '?',
       },
