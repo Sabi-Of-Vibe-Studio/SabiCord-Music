@@ -3,6 +3,7 @@
  *
  * Copyright (c) 2025 NirrussVn0
  */
+
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
 import { Client, Guild } from 'discord.js';
