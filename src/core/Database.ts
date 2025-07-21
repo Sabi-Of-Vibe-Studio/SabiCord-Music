@@ -1,9 +1,9 @@
-import { Settings } from '@core/Settings';
 /**
  * MIT License
  * 
  * Copyright (c) 2025 NirrussVn0
  */
+
 import { MongoClient, Db, Collection } from 'mongodb';
 import { 
   IDatabase, 
@@ -15,6 +15,7 @@ import {
 } from '@interfaces/IDatabase';
 import { IGuildSettings, IUserData } from '@interfaces/ISettings';
 import { logger } from './Logger';
+
 class CacheManager<T> implements ICacheManager<T> {
   private cache = new Map<string, { value: T; expires?: number }>();
   get(key: string): T | undefined {
