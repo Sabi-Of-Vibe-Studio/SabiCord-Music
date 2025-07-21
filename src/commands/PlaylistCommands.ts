@@ -23,6 +23,7 @@ import { logger } from '@core/Logger';
 export class PlaylistCommands {
   @Slash({ description: 'Show the current music queue' })
   async list(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Page number',
       name: 'page',
@@ -30,15 +31,14 @@ export class PlaylistCommands {
       type: ApplicationCommandOptionType.Integer,
       minValue: 1,
     })
-    page: number = 1,
-    interaction: CommandInteraction
+    page: number = 1
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-    const tracks = player.queue.tracks();
+    const tracks = player.queue.getTracks();
     if (tracks.length === 0) {
       await interaction.reply({ content: '❌ The queue is empty!', ephemeral: true });
       return;
@@ -50,7 +50,7 @@ export class PlaylistCommands {
     const endIndex = startIndex + tracksPerPage;
     const pageTrack = tracks.slice(startIndex, endIndex);
     const embed = new EmbedBuilder()
-      .setColor('#0099ff')
+      .setColor(0x0099ff)
       .setTitle('🎵 Music Queue')
       .setDescription(
         pageTrack
