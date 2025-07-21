@@ -4,7 +4,7 @@
  * Copyright (c) 2025 NirrussVn0
  */
 import { Track } from './Track';
-import { QueueException, QueueFull, QueueEmpty } from './Exceptions';
+import { QueueException, QueueFull } from './Exceptions';
 export interface IQueueOptions {
   maxSize?: number;
   allowDuplicate?: boolean;
