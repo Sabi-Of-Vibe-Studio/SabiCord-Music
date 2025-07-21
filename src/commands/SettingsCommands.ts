@@ -14,7 +14,7 @@ import {
 } from 'discord.js';
 import { Discord, Slash, SlashOption, SlashGroup } from 'discordx';
 import { injectable, container } from 'tsyringe';
-import { getPlayer } from '@audio/index';
+import { getPlayer, connectChannel } from '@audio/index';
 import { Database } from '@core/Database';
 import { Settings } from '@core/Settings';
 import { logger } from '@core/Logger';
@@ -25,6 +25,7 @@ import { logger } from '@core/Logger';
 export class SettingsCommands {
   @Slash({ description: 'Set the bot prefix for this server' })
   async prefix(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'New prefix (leave empty to view current)',
       name: 'prefix',
@@ -32,8 +33,7 @@ export class SettingsCommands {
       type: ApplicationCommandOptionType.String,
       maxLength: 5,
     })
-    prefix: string | undefined,
-    interaction: CommandInteraction
+    prefix?: string
   ): Promise<void> {
     const validation = await this.validateGuildAndPermissions(interaction);
     if (!validation.isValid) {
@@ -44,14 +44,14 @@ export class SettingsCommands {
       const database = container.resolve<Database>('Database');
       const settings = container.resolve<Settings>('Settings');
       if (!prefix) {
-        const guildSettings = await database.settings.getSettings(interaction.guild.id);
+        const guildSettings = await database.settings.getSettings(interaction.guild!.id);
         const currentPrefix = guildSettings.prefix || settings.prefix;
-        await interaction.reply({ 
-          content: `🔧 Current prefix: \`${currentPrefix}\`` 
+        await interaction.reply({
+          content: `🔧 Current prefix: \`${currentPrefix}\``
         });
         return;
       }
-      await database.settings.updateSettings(interaction.guild.id, {
+      await database.settings.updateSettings(interaction.guild!.id, {
         $set: { prefix }
       });
       await interaction.reply({ 
@@ -126,6 +126,7 @@ export class SettingsCommands {
   }
   @Slash({ description: 'Set a music request channel' })
   async musicchannel(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Text channel for music requests',
       name: 'channel',
@@ -133,8 +134,7 @@ export class SettingsCommands {
       type: ApplicationCommandOptionType.Channel,
       channelTypes: [ChannelType.GuildText],
     })
-    channel?: TextChannel,
-    interaction: CommandInteraction
+    channel?: TextChannel
   ): Promise<void> {
     if (!interaction.guild) {
       await interaction.reply({ content: '❌ This command can only be used in servers!', ephemeral: true });
@@ -254,6 +254,7 @@ export class SettingsCommands {
   }
   @Slash({ description: 'Connect the bot to a voice channel' })
   async connect(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Voice channel to connect to',
       name: 'channel',
@@ -261,8 +262,7 @@ export class SettingsCommands {
       type: ApplicationCommandOptionType.Channel,
       channelTypes: [ChannelType.GuildVoice],
     })
-    channel?: VoiceChannel,
-    interaction: CommandInteraction
+    channel?: VoiceChannel
   ): Promise<void> {
     if (!interaction.guild) {
       await interaction.reply({ content: '❌ This command can only be used in servers!', ephemeral: true });
@@ -309,7 +309,7 @@ export class SettingsCommands {
   @Slash({ description: 'Show bot information and statistics' })
   async info(interaction: CommandInteraction): Promise<void> {
     try {
-      const settings = container.resolve<Settings>('Settings');
+
       const client = interaction.client;
       const uptime = process.uptime();
       const uptimeString = this.formatUptime(uptime);
@@ -354,8 +354,8 @@ export class SettingsCommands {
       ]);
     if (player) {
       embed.addFields([
-        { name: 'Lavalink Latency', value: `${player.ping}ms`, inline: true },
         { name: 'Node', value: player.node.identifier, inline: true },
+        { name: 'Queue Size', value: `${player.queue.size()}`, inline: true },
       ]);
     }
     await interaction.editReply({ embeds: [embed] });
@@ -385,21 +385,5 @@ export class SettingsCommands {
     }
     return { isValid: true };
   }
-  private async validateGuildOnly(interaction: CommandInteraction): Promise<{ isValid: boolean; errorMessage?: string }> {
-    if (!interaction.guild) {
-      return { isValid: false, errorMessage: '❌ This command can only be used in servers!' };
-    }
-    return { isValid: true };
-  }
-  private async handleSettingsError(interaction: CommandInteraction, message: string): Promise<void> {
-    try {
-      if (interaction.deferred) {
-        await interaction.editReply({ content: message });
-      } else {
-        await interaction.reply({ content: message, ephemeral: true });
-      }
-    } catch (error) {
-      logger.error('Error handling settings command error', error as Error, 'SettingsCommands');
-    }
-  }
+
 }
