@@ -28,7 +28,7 @@ export class QueueView {
   private user: User;
   private currentPage: number;
   private tracksPerPage: number;
-  private message?: Message;
+  private message?: Message | undefined;
   private totalPages: number;
   constructor(options: IQueueViewOptions) {
     this.player = options.player;
@@ -46,7 +46,7 @@ export class QueueView {
         components,
       });
       this.setupInteractionCollector();
-      return this.message;
+      return this.message!;
     } catch (error) {
       logger.error('Failed to send queue view', error as Error, 'queue');
       throw error;
@@ -71,7 +71,7 @@ export class QueueView {
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
       .setTitle('📋 Music Queue');
-    const tracks = this.player.queue.tracks();
+    const tracks = this.player.queue.getTracks();
     if (tracks.length === 0) {
       embed.setDescription('The queue is empty!');
       return embed;
@@ -80,7 +80,7 @@ export class QueueView {
     const endIndex = startIndex + this.tracksPerPage;
     const pageTrack = tracks.slice(startIndex, endIndex);
     const trackList = pageTrack
-      .map((track, index) => {
+      .map((track: Track, index: number) => {
         const position = startIndex + index + 1;
         const duration = track.formattedLength;
         const title = Utils.truncateString(track.title, 40);
