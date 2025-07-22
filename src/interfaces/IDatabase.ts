@@ -7,7 +7,7 @@ import { Collection, MongoClient } from 'mongodb';
 import { IGuildSettings, IUserData } from './ISettings';
 export interface IDatabaseConnection {
   client: MongoClient;
-  isConnected: boolean;
+  isConnected(): boolean;
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   ping(): Promise<boolean>;

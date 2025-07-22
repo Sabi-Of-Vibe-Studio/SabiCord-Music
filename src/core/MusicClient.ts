@@ -14,7 +14,7 @@ import { DatabaseService } from '../services/DatabaseService';
 import { EventHandlerService } from '../services/EventHandlerService';
 import { CommandService } from '../services/CommandService';
 export class MusicClient extends DiscordXClient implements IDiscordClient, IServiceInitializer {
-  private logger!: ILogger;
+  private override logger!: ILogger;
   private serviceContainer: ServiceContainer;
   private configService!: ConfigurationService;
   private databaseService!: DatabaseService;
@@ -75,7 +75,7 @@ export class MusicClient extends DiscordXClient implements IDiscordClient, IServ
     }
     this.serviceContainer.registerClient(this);
   }
-  public isReady(): boolean {
+  public override isReady(): this is MusicClient & { readyAt: Date } {
     return this.readyAt !== null;
   }
   public async shutdown(): Promise<void> {

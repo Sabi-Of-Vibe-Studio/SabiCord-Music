@@ -52,26 +52,29 @@ class CacheManager<T> implements ICacheManager<T> {
 }
 class DatabaseConnection implements IDatabaseConnection {
   public client: MongoClient;
-  public isConnected = false;
+  private connected = false;
   constructor(private url: string) {
     this.client = new MongoClient(url);
+  }
+  public isConnected(): boolean {
+    return this.connected;
   }
   async connect(): Promise<void> {
     try {
       await this.client.connect();
       await this.client.db('admin').command({ ping: 1 });
-      this.isConnected = true;
+      this.connected = true;
       logger.info('Successfully connected to MongoDB', 'database');
     } catch (error) {
       logger.error('Failed to connect to MongoDB', error as Error, 'database');
       logger.warn('Bot will continue in degraded mode without database functionality', 'database');
-      this.isConnected = false;
+      this.connected = false;
     }
   }
   async disconnect(): Promise<void> {
     try {
       await this.client.close();
-      this.isConnected = false;
+      this.connected = false;
       logger.info('Disconnected from MongoDB', 'database');
     } catch (error) {
       logger.error('Error disconnecting from MongoDB', error as Error, 'database');
@@ -279,7 +282,7 @@ export class Database implements IDatabase {
   }
   async initialize(): Promise<void> {
     await this.connection.connect();
-    if (this.connection.isConnected) {
+    if (this.connection.isConnected()) {
       this.db = this.connection.client.db(this.dbName);
       this.settings = new GuildSettingsRepository(this.db, this.cache.settings);
       this.users = new UserRepository(this.db, this.cache.users);
