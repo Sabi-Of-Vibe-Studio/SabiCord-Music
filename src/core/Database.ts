@@ -203,7 +203,7 @@ class UserRepository implements IUserRepository {
   async count(filter?: any): Promise<number> {
     return await this.collection.countDocuments(filter || {});
   }
-async getUser(userId: string, dataType?: string): Promise<IUserData> {
+async getUser(userId: string): Promise<IUserData> {
   const cacheKey = `user:${userId}`;
   let user = this.cache.get(cacheKey);
 

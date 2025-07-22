@@ -3,7 +3,7 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { Collection, MongoClient } from 'mongodb';
+import { MongoClient } from 'mongodb';
 import { IGuildSettings, IUserData } from './ISettings';
 export interface IDatabaseConnection {
   client: MongoClient;
