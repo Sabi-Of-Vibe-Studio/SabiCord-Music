@@ -14,7 +14,7 @@ import { DatabaseService } from '../services/DatabaseService';
 import { EventHandlerService } from '../services/EventHandlerService';
 import { CommandService } from '../services/CommandService';
 export class SabiCordMusicClient extends DiscordXClient implements IDiscordClient, IServiceInitializer {
-  private logger!: ILogger;
+  private override logger!: ILogger;
   private serviceContainer: ServiceContainer;
   private configService!: ConfigurationService;
   private databaseService!: DatabaseService;
@@ -72,7 +72,7 @@ export class SabiCordMusicClient extends DiscordXClient implements IDiscordClien
     }
     this.serviceContainer.registerClient(this);
   }
-  public override isReady(): this is DiscordXClient<true> {
+  public override isReady(): this is SabiCordMusicClient & { readyAt: Date } {
     return this.readyAt !== null;
   }
   public async shutdown(): Promise<void> {

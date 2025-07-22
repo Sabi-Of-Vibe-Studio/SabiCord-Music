@@ -15,6 +15,7 @@ import {
 } from 'discord.js';
 import { Player } from '../audio/Player';
 import { Track } from '../audio/Track';
+import { LoopMode } from '../audio/Enums';
 import { Utils } from '../core/Utils';
 import { logger } from '../core/Logger';
 export interface IQueueViewOptions {
@@ -103,7 +104,7 @@ export class QueueView {
       ]);
     }
     const queueLength = this.player.queue.formattedLength;
-    const repeatMode = this.player.queue.repeatModeString;
+    const repeatMode = this.getLoopModeString();
     embed.addFields([
       {
         name: '📊 Queue Stats',
@@ -151,19 +152,19 @@ export class QueueView {
         .setEmoji('🔀')
         .setLabel('Shuffle')
         .setStyle(ButtonStyle.Secondary)
-        .setDisabled(this.player.queue.isEmpty),
+        .setDisabled(this.player.queue.isEmpty()),
       new ButtonBuilder()
         .setCustomId('queue_clear')
         .setEmoji('🗑️')
         .setLabel('Clear')
         .setStyle(ButtonStyle.Danger)
-        .setDisabled(this.player.queue.isEmpty),
+        .setDisabled(this.player.queue.isEmpty()),
       new ButtonBuilder()
         .setCustomId('queue_save')
         .setEmoji('💾')
         .setLabel('Save')
         .setStyle(ButtonStyle.Secondary)
-        .setDisabled(this.player.queue.isEmpty),
+        .setDisabled(this.player.queue.isEmpty()),
       new ButtonBuilder()
         .setCustomId('queue_close')
         .setEmoji('❌')
@@ -188,7 +189,7 @@ export class QueueView {
     });
     collector.on('end', async () => {
       try {
-        if (this.message && !this.message.deleted) {
+        if (this.message) {
           await this.message.edit({
             components: [],
           });
@@ -308,5 +309,17 @@ export class QueueView {
     if (!this.player.current) return '▱'.repeat(20);
     const progress = Math.floor((this.player.position / this.player.current.length) * 20);
     return '▰'.repeat(Math.max(0, progress)) + '▱'.repeat(Math.max(0, 20 - progress));
+  }
+  private getLoopModeString(): string {
+    switch (this.player.loopMode) {
+      case LoopMode.NONE:
+        return 'Off';
+      case LoopMode.TRACK:
+        return 'Track';
+      case LoopMode.QUEUE:
+        return 'Queue';
+      default:
+        return 'Off';
+    }
   }
 }

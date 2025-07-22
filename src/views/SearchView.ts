@@ -203,8 +203,8 @@ export class SearchView {
     try {
       let addedCount = 0;
       for (const track of this.selectedTracks) {
-        const position = await this.player.addTrack(track);
-        if (position > 0) addedCount++;
+        this.player.queue.add(track);
+        addedCount++;
       }
       const trackList = this.selectedTracks
         .slice(0, 3)
@@ -217,8 +217,8 @@ export class SearchView {
         content: message,
         ephemeral: true,
       });
-      if (!this.player.isPlaying && !this.player.current) {
-        await this.player.doNext();
+      if (!this.player.playing && !this.player.current) {
+        await this.player.play();
       }
       await this.destroy();
     } catch (error) {
@@ -240,15 +240,15 @@ export class SearchView {
     try {
       let addedCount = 0;
       for (const track of this.tracks) {
-        const position = await this.player.addTrack(track);
-        if (position > 0) addedCount++;
+        this.player.queue.add(track);
+        addedCount++;
       }
       await interaction.reply({
         content: `✅ Added **${addedCount}** tracks to the queue!`,
         ephemeral: true,
       });
-      if (!this.player.isPlaying && !this.player.current) {
-        await this.player.doNext();
+      if (!this.player.playing && !this.player.current) {
+        await this.player.play();
       }
       await this.destroy();
     } catch (error) {
