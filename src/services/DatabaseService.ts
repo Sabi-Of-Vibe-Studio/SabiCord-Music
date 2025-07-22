@@ -37,6 +37,6 @@ export class DatabaseService {
     this.logger.info('Database service closed', 'database');
   }
   public isConnected(): boolean {
-    return this.database.connection.isConnected;
+    return this.database.connection.isConnected();
   }
 }

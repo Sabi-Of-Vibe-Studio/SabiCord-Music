@@ -6,7 +6,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { config } from 'dotenv';
-import { ISettings, INodeConfig, IActivityConfig, ILoggingConfig, IIPCConfig, IControllerConfig } from '@interfaces/ISettings';
+import { ISettings, INodeConfig, IActivityConfig, ILoggingConfig, IIPCConfig, IControllerConfig } from '../interfaces/ISettings';
 config();
 export class Settings implements ISettings {
   public token: string = process.env.DISCORD_TOKEN || '?';

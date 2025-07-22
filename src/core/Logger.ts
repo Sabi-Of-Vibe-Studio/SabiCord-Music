@@ -7,7 +7,7 @@ import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { ILoggingConfig } from '@interfaces/ISettings';
+import { ILoggingConfig } from '../interfaces/ISettings';
 export interface ILogger {
   info(message: string, service?: string): void;
   warn(message: string, service?: string): void;

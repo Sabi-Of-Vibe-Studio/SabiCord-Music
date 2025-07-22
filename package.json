@@ -5,6 +5,7 @@
   "type": "commonjs",
   "main": "dist/index.js",
   "scripts": {
+    "build:debug": "tsc --noEmitOnError false",
     "build": "tsc && tsc-alias",
     "start": "node dist/index.js",
     "dev": "ts-node --transpile-only -r tsconfig-paths/register src/index.ts",
@@ -38,7 +39,7 @@
     "dotenv": "^16.3.1",
     "humanize-duration": "^3.31.0",
     "module-alias": "^2.2.3",
-    "mongodb": "^6.3.0",
+    "mongodb": "^6.17.0",
     "mongoose": "^8.16.4",
     "reflect-metadata": "^0.2.1",
     "tsyringe": "^4.8.0",

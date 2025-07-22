@@ -15,6 +15,7 @@ import {
 } from 'discord.js';
 import { Player } from '../audio/Player';
 import { Track } from '../audio/Track';
+import { LoopMode } from '../audio/Enums';
 import { Utils } from '../core/Utils';
 import { logger } from '../core/Logger';
 export interface IQueueViewOptions {
@@ -28,7 +29,7 @@ export class QueueView {
   private user: User;
   private currentPage: number;
   private tracksPerPage: number;
-  private message?: Message;
+  private message?: Message | undefined;
   private totalPages: number;
   constructor(options: IQueueViewOptions) {
     this.player = options.player;
@@ -46,7 +47,7 @@ export class QueueView {
         components,
       });
       this.setupInteractionCollector();
-      return this.message;
+      return this.message!;
     } catch (error) {
       logger.error('Failed to send queue view', error as Error, 'queue');
       throw error;
@@ -71,7 +72,7 @@ export class QueueView {
     const embed = new EmbedBuilder()
       .setColor('#0099ff')
       .setTitle('📋 Music Queue');
-    const tracks = this.player.queue.tracks();
+    const tracks = this.player.queue.getTracks();
     if (tracks.length === 0) {
       embed.setDescription('The queue is empty!');
       return embed;
@@ -80,7 +81,7 @@ export class QueueView {
     const endIndex = startIndex + this.tracksPerPage;
     const pageTrack = tracks.slice(startIndex, endIndex);
     const trackList = pageTrack
-      .map((track, index) => {
+      .map((track: Track, index: number) => {
         const position = startIndex + index + 1;
         const duration = track.formattedLength;
         const title = Utils.truncateString(track.title, 40);
@@ -103,7 +104,7 @@ export class QueueView {
       ]);
     }
     const queueLength = this.player.queue.formattedLength;
-    const repeatMode = this.player.queue.repeatModeString;
+    const repeatMode = this.getLoopModeString();
     embed.addFields([
       {
         name: '📊 Queue Stats',
@@ -151,19 +152,19 @@ export class QueueView {
         .setEmoji('🔀')
         .setLabel('Shuffle')
         .setStyle(ButtonStyle.Secondary)
-        .setDisabled(this.player.queue.isEmpty),
+        .setDisabled(this.player.queue.isEmpty()),
       new ButtonBuilder()
         .setCustomId('queue_clear')
         .setEmoji('🗑️')
         .setLabel('Clear')
         .setStyle(ButtonStyle.Danger)
-        .setDisabled(this.player.queue.isEmpty),
+        .setDisabled(this.player.queue.isEmpty()),
       new ButtonBuilder()
         .setCustomId('queue_save')
         .setEmoji('💾')
         .setLabel('Save')
         .setStyle(ButtonStyle.Secondary)
-        .setDisabled(this.player.queue.isEmpty),
+        .setDisabled(this.player.queue.isEmpty()),
       new ButtonBuilder()
         .setCustomId('queue_close')
         .setEmoji('❌')
@@ -188,7 +189,7 @@ export class QueueView {
     });
     collector.on('end', async () => {
       try {
-        if (this.message && !this.message.deleted) {
+        if (this.message) {
           await this.message.edit({
             components: [],
           });
@@ -308,5 +309,17 @@ export class QueueView {
     if (!this.player.current) return '▱'.repeat(20);
     const progress = Math.floor((this.player.position / this.player.current.length) * 20);
     return '▰'.repeat(Math.max(0, progress)) + '▱'.repeat(Math.max(0, 20 - progress));
+  }
+  private getLoopModeString(): string {
+    switch (this.player.loopMode) {
+      case LoopMode.NONE:
+        return 'Off';
+      case LoopMode.TRACK:
+        return 'Track';
+      case LoopMode.QUEUE:
+        return 'Queue';
+      default:
+        return 'Off';
+    }
   }
 }

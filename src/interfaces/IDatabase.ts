@@ -3,22 +3,26 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { Collection, MongoClient } from 'mongodb';
+import { MongoClient } from 'mongodb';
 import { IGuildSettings, IUserData } from './ISettings';
 export interface IDatabaseConnection {
   client: MongoClient;
-  isConnected: boolean;
+  isConnected(): boolean;
   connect(): Promise<void>;
   disconnect(): Promise<void>;
   ping(): Promise<boolean>;
 }
 export interface IDatabaseOperations<T> {
+  findById(id: string): Promise<T | null>;
   findOne(filter: any): Promise<T | null>;
   findMany(filter: any, options?: any): Promise<T[]>;
+  create(data: Partial<T>): Promise<T>;
   insertOne(document: T): Promise<boolean>;
   insertMany(documents: T[]): Promise<boolean>;
+  updateById(id: string, data: Partial<T>): Promise<boolean>;
   updateOne(filter: any, update: any): Promise<boolean>;
   updateMany(filter: any, update: any): Promise<boolean>;
+  deleteById(id: string): Promise<boolean>;
   deleteOne(filter: any): Promise<boolean>;
   deleteMany(filter: any): Promise<boolean>;
   count(filter?: any): Promise<number>;

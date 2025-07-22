@@ -9,7 +9,7 @@ import {
   StringSelectMenuOptionBuilder,
   EmbedBuilder,
   StringSelectMenuInteraction,
-  ComponentType,
+
   Message,
   User,
   ButtonBuilder,
@@ -36,7 +36,7 @@ interface ICommand {
 export class HelpView {
   private user: User;
   private prefix: string;
-  private message?: Message;
+  private message?: Message | undefined;
   private currentCategory = 'overview';
   private categories: Record<string, ICommandCategory>;
   constructor(options: IHelpViewOptions) {
@@ -53,7 +53,7 @@ export class HelpView {
         components,
       });
       this.setupInteractionCollector();
-      return this.message;
+      return this.message!;
     } catch (error) {
       logger.error('Failed to send help view', error as Error, 'help');
       throw error;
@@ -181,7 +181,7 @@ export class HelpView {
     });
     collector.on('end', async () => {
       try {
-        if (this.message && !this.message.deleted) {
+        if (this.message) {
           await this.message.edit({
             components: [],
           });
@@ -192,7 +192,7 @@ export class HelpView {
     });
   }
   private async handleSelectMenu(interaction: StringSelectMenuInteraction): Promise<void> {
-    this.currentCategory = interaction.values[0];
+    this.currentCategory = interaction.values[0] || 'overview';
     await interaction.deferUpdate();
     const embed = this.createEmbed();
     const components = this.createComponents();
