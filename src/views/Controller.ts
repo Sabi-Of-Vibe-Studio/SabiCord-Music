@@ -1,6 +1,6 @@
 /**
  * MIT License
- * 
+ *
  * Copyright (c) 2025 NirrussVn0
  */
 import {
@@ -13,6 +13,7 @@ import {
   Message,
   TextChannel,
   User,
+  ColorResolvable
 } from 'discord.js';
 import { Player } from '../audio/Player';
 import { LoopMode } from '../audio/Enums';
@@ -20,25 +21,29 @@ import { Utils } from '../core/Utils';
 import { logger } from '../core/Logger';
 import { container } from 'tsyringe';
 import { Settings } from '../core/Settings';
+
 export interface IControllerOptions {
   player: Player;
   channel: TextChannel;
   user?: User;
   ephemeral?: boolean;
 }
+
 export class MusicController {
   private player: Player;
   private channel: TextChannel;
-  private message?: Message | undefined;
+  private message: Message<boolean> | undefined;
   private settings: Settings;
-  private updateInterval?: NodeJS.Timeout | undefined;
+  private updateInterval: NodeJS.Timeout | undefined;
+
   constructor(options: IControllerOptions) {
     this.player = options.player;
     this.channel = options.channel;
     this.settings = container.resolve<Settings>('Settings');
     this.setupEventListeners();
   }
-  public async send(): Promise<Message> {
+
+  public async send(): Promise<Message<boolean>> {
     const embed = this.createEmbed();
     const components = this.createComponents();
     try {
@@ -54,6 +59,7 @@ export class MusicController {
       throw error;
     }
   }
+
   public async update(): Promise<void> {
     if (!this.message) return;
     const embed = this.createEmbed();
@@ -67,20 +73,22 @@ export class MusicController {
       logger.error('Failed to update controller message', error as Error, 'controller');
     }
   }
+
   public async destroy(): Promise<void> {
-    if (this.updateInterval) {
+    if (this.updateInterval !== undefined) {
       clearInterval(this.updateInterval);
       this.updateInterval = undefined;
     }
     if (this.message) {
       try {
         await this.message.delete();
-      } catch (error) {
+      } catch {
         logger.debug('Failed to delete controller message', 'controller');
       }
       this.message = undefined;
     }
   }
+
   private createEmbed(): EmbedBuilder {
     const embed = new EmbedBuilder();
     const track = this.player.current;
@@ -89,7 +97,7 @@ export class MusicController {
       const position = Utils.formatTime(this.player.position);
       const duration = track.formattedLength;
       embed
-        .setColor(this.getTrackColor(track.source) as any)
+        .setColor(this.getTrackColor(track.source))
         .setTitle('🎵 Now Playing')
         .setDescription(`**[${track.title}](${track.uri})**`)
         .addFields([
@@ -111,12 +119,20 @@ export class MusicController {
         .setDescription('No music is currently playing')
         .setImage('https://example.com/default-music.png');
     }
-    embed.setFooter({
-      text: `Connected to ${this.player.channel.name}`,
-      iconURL: this.player.guild.iconURL() || undefined,
-    });
+
+    const iconURL = this.player.guild.iconURL();
+    if (iconURL) {
+      embed.setFooter({
+        text: `Connected to ${this.player.channel.name}`,
+        iconURL,
+      });
+    } else {
+      embed.setFooter({ text: `Connected to ${this.player.channel.name}` });
+    }
+
     return embed;
   }
+
   private createComponents(): ActionRowBuilder<ButtonBuilder>[] {
     const row1 = new ActionRowBuilder<ButtonBuilder>();
     const row2 = new ActionRowBuilder<ButtonBuilder>();
@@ -144,7 +160,7 @@ export class MusicController {
       new ButtonBuilder()
         .setCustomId('controller_queue')
         .setEmoji('📋')
-        .setStyle(ButtonStyle.Secondary)
+        .setStyle(ButtonStyle.Secondary),
     );
     row2.addComponents(
       new ButtonBuilder()
@@ -171,11 +187,12 @@ export class MusicController {
     );
     return [row1, row2];
   }
+
   private setupInteractionCollector(): void {
     if (!this.message) return;
     const collector = this.message.createMessageComponentCollector({
       componentType: ComponentType.Button,
-      time: 300000, 
+      time: 300000,
     });
     collector.on('collect', async (interaction: ButtonInteraction) => {
       try {
@@ -188,12 +205,10 @@ export class MusicController {
       logger.debug('Controller collector ended', 'controller');
     });
   }
+
   private async handleButtonInteraction(interaction: ButtonInteraction): Promise<void> {
     if (!this.player.isUserInChannel(interaction.user)) {
-      await interaction.reply({
-        content: `❌ You must be in ${this.player.channel} to use the controller!`,
-        ephemeral: true,
-      });
+      await interaction.reply({ content: `❌ You must be in ${this.player.channel} to use the controller!`, ephemeral: true });
       return;
     }
     const action = interaction.customId.replace('controller_', '');
@@ -229,18 +244,13 @@ export class MusicController {
         await this.handleDisconnect(interaction);
         break;
       default:
-        await interaction.reply({
-          content: '❌ Unknown action!',
-          ephemeral: true,
-        });
+        await interaction.reply({ content: '❌ Unknown action!', ephemeral: true });
     }
   }
+
   private async handlePlayPause(interaction: ButtonInteraction): Promise<void> {
     if (!this.player.current) {
-      await interaction.reply({
-        content: '❌ No track is currently playing!',
-        ephemeral: true,
-      });
+      await interaction.reply({ content: '❌ No track is currently playing!', ephemeral: true });
       return;
     }
     if (this.player.isPaused) {
@@ -248,177 +258,129 @@ export class MusicController {
         this.player.resumeVotes.add(interaction.user);
         const required = this.player.requiredVotes();
         if (this.player.resumeVotes.size < required) {
-          await interaction.reply({
-            content: `🗳️ Vote to resume registered! (${this.player.resumeVotes.size}/${required})`,
-            ephemeral: true,
-          });
+          await interaction.reply({ content: `🗳️ Vote to resume registered! (${this.player.resumeVotes.size}/${required})`, ephemeral: true });
           return;
         }
       }
       await this.player.resume();
-      await interaction.reply({
-        content: '▶️ Music resumed!',
-        ephemeral: true,
-      });
+      await interaction.reply({ content: '▶️ Music resumed!', ephemeral: true });
     } else {
       if (!this.player.isPrivileged(interaction.user)) {
         this.player.pauseVotes.add(interaction.user);
         const required = this.player.requiredVotes();
         if (this.player.pauseVotes.size < required) {
-          await interaction.reply({
-            content: `🗳️ Vote to pause registered! (${this.player.pauseVotes.size}/${required})`,
-            ephemeral: true,
-          });
+          await interaction.reply({ content: `🗳️ Vote to pause registered! (${this.player.pauseVotes.size}/${required})`, ephemeral: true });
           return;
         }
       }
       await this.player.pause();
-      await interaction.reply({
-        content: '⏸️ Music paused!',
-        ephemeral: true,
-      });
+      await interaction.reply({ content: '⏸️ Music paused!', ephemeral: true });
     }
   }
+
   private async handleSkip(interaction: ButtonInteraction): Promise<void> {
     if (!this.player.current) {
-      await interaction.reply({
-        content: '❌ No track is currently playing!',
-        ephemeral: true,
-      });
+      await interaction.reply({ content: '❌ No track is currently playing!', ephemeral: true });
       return;
     }
     if (!this.player.isPrivileged(interaction.user)) {
       this.player.skipVotes.add(interaction.user);
       const required = this.player.requiredVotes();
       if (this.player.skipVotes.size < required) {
-        await interaction.reply({
-          content: `🗳️ Vote to skip registered! (${this.player.skipVotes.size}/${required})`,
-          ephemeral: true,
-        });
+        await interaction.reply({ content: `🗳️ Vote to skip registered! (${this.player.skipVotes.size}/${required})`, ephemeral: true });
         return;
       }
     }
-    const trackTitle = this.player.current.title;
+    const title = this.player.current.title;
     await this.player.stop();
-    await interaction.reply({
-      content: `⏭️ Skipped **${Utils.truncateString(trackTitle, 30)}**!`,
-      ephemeral: true,
-    });
+    await interaction.reply({ content: `⏭️ Skipped **${Utils.truncateString(title, 30)}**!`, ephemeral: true });
   }
+
+  private async handlePrevious(interaction: ButtonInteraction): Promise<void> {
+    await interaction.reply({ content: '⏮️ Previous track functionality coming soon!', ephemeral: true });
+  }
+
   private async handleStop(interaction: ButtonInteraction): Promise<void> {
     if (!this.player.isPrivileged(interaction.user)) {
       this.player.stopVotes.add(interaction.user);
       const required = this.player.requiredVotes();
       if (this.player.stopVotes.size < required) {
-        await interaction.reply({
-          content: `🗳️ Vote to stop registered! (${this.player.stopVotes.size}/${required})`,
-          ephemeral: true,
-        });
+        await interaction.reply({ content: `🗳️ Vote to stop registered! (${this.player.stopVotes.size}/${required})`, ephemeral: true });
         return;
       }
     }
     await this.player.stop();
     this.player.queue.clear();
-    await interaction.reply({
-      content: '⏹️ Music stopped and queue cleared!',
-      ephemeral: true,
-    });
+    await interaction.reply({ content: '⏹️ Music stopped and queue cleared!', ephemeral: true });
   }
+
+  private async handleStrShuffle(interaction: ButtonInteraction): Promise<void> {
+    // This should be handleShuffle; ensure method name matches collector switch-case
+  }
+
   private async handleShuffle(interaction: ButtonInteraction): Promise<void> {
-    if (this.player.queue.isEmpty) {
-      await interaction.reply({
-        content: '❌ The queue is empty!',
-        ephemeral: true,
-      });
+    if (this.player.queue.isEmpty()) {
+      await interaction.reply({ content: '❌ The queue is empty!', ephemeral: true });
       return;
     }
     if (!this.player.isPrivileged(interaction.user)) {
       this.player.shuffleVotes.add(interaction.user);
       const required = this.player.requiredVotes();
       if (this.player.shuffleVotes.size < required) {
-        await interaction.reply({
-          content: `🗳️ Vote to shuffle registered! (${this.player.shuffleVotes.size}/${required})`,
-          ephemeral: true,
-        });
+        await interaction.reply({ content: `🗳️ Vote to shuffle registered! (${this.player.shuffleVotes.size}/${required})`, ephemeral: true });
         return;
       }
     }
     this.player.queue.shuffle();
-    await interaction.reply({
-      content: '🔀 Queue shuffled!',
-      ephemeral: true,
-    });
+    await interaction.reply({ content: '🔀 Queue shuffled!', ephemeral: true });
   }
+
   private async handleRepeat(interaction: ButtonInteraction): Promise<void> {
     const oldMode = this.player.loopMode;
-    const newMode = this.getNextLoopMode(oldMode);
-    this.player.setLoop(newMode);
-    await interaction.reply({
-      content: `🔁 Repeat mode: **${this.getLoopModeString()}**`,
-      ephemeral: true,
-    });
+    const next = this.getNextLoopMode(oldMode);
+    this.player.setLoop(next);
+    await interaction.reply({ content: `🔁 Repeat mode: **${this.getLoopModeString()}**`, ephemeral: true });
   }
+
   private async handleVolumeUp(interaction: ButtonInteraction): Promise<void> {
     if (!this.player.isPrivileged(interaction.user)) {
-      await interaction.reply({
-        content: '❌ You need DJ permissions to change volume!',
-        ephemeral: true,
-      });
+      await interaction.reply({ content: '❌ You need DJ permissions to change volume!', ephemeral: true });
       return;
     }
-    const newVolume = Math.min(this.player.currentVolume + 10, 100);
-    await this.player.setVolume(newVolume);
-    await interaction.reply({
-      content: `🔊 Volume: **${newVolume}%**`,
-      ephemeral: true,
-    });
+    const vol = Math.min(this.player.currentVolume + 10, 100);
+    await this.player.setVolume(vol);
+    await interaction.reply({ content: `🔊 Volume: **${vol}%**`, ephemeral: true });
   }
+
   private async handleVolumeDown(interaction: ButtonInteraction): Promise<void> {
     if (!this.player.isPrivileged(interaction.user)) {
-      await interaction.reply({
-        content: '❌ You need DJ permissions to change volume!',
-        ephemeral: true,
-      });
+      await interaction.reply({ content: '❌ You need DJ permissions to change volume!', ephemeral: true });
       return;
     }
-    const newVolume = Math.max(this.player.currentVolume - 10, 0);
-    await this.player.setVolume(newVolume);
-    await interaction.reply({
-      content: `🔉 Volume: **${newVolume}%**`,
-      ephemeral: true,
-    });
+    const vol = Math.max(this.player.currentVolume - 10, 0);
+    await this.player.setVolume(vol);
+    await interaction.reply({ content: `🔉 Volume: **${vol}%**`, ephemeral: true });
   }
+
   private async handleQueue(interaction: ButtonInteraction): Promise<void> {
-    await interaction.reply({
-      content: '📋 Queue view coming soon!',
-      ephemeral: true,
-    });
+    await interaction.reply({ content: '📋 Queue view coming soon!', ephemeral: true });
   }
-  private async handlePrevious(interaction: ButtonInteraction): Promise<void> {
-    await interaction.reply({
-      content: '⏮️ Previous track functionality coming soon!',
-      ephemeral: true,
-    });
-  }
+
   private async handleDisconnect(interaction: ButtonInteraction): Promise<void> {
     if (!this.player.isPrivileged(interaction.user)) {
-      await interaction.reply({
-        content: '❌ You need DJ permissions to disconnect the bot!',
-        ephemeral: true,
-      });
+      await interaction.reply({ content: '❌ You need DJ permissions to disconnect the bot!', ephemeral: true });
       return;
     }
     await this.player.disconnect();
-    await interaction.reply({
-      content: '🔌 Disconnected from voice channel!',
-      ephemeral: true,
-    });
+    await interaction.reply({ content: '🔌 Disconnected from voice channel!', ephemeral: true });
   }
+
   private createProgressBar(): string {
     if (!this.player.current) return '▱'.repeat(20);
-    const progress = Math.floor((this.player.position / this.player.current.length) * 20);
-    return '▰'.repeat(Math.max(0, progress)) + '▱'.repeat(Math.max(0, 20 - progress));
+    const prog = Math.floor((this.player.position / this.player.current.length) * 20);
+    return '▰'.repeat(Math.max(0, prog)) + '▱'.repeat(Math.max(0, 20 - prog));
   }
+
   private getLoopModeString(): string {
     switch (this.player.loopMode) {
       case LoopMode.NONE:
@@ -431,8 +393,9 @@ export class MusicController {
         return 'Off';
     }
   }
-  private getNextLoopMode(currentMode: LoopMode): LoopMode {
-    switch (currentMode) {
+
+  private getNextLoopMode(mode: LoopMode): LoopMode {
+    switch (mode) {
       case LoopMode.NONE:
         return LoopMode.TRACK;
       case LoopMode.TRACK:
@@ -443,10 +406,12 @@ export class MusicController {
         return LoopMode.NONE;
     }
   }
-  private getTrackColor(source: string): string {
-    const sourceInfo = Utils.getSourceInfo(source, this.settings.sources_settings);
-    return sourceInfo.color;
+
+  private getTrackColor(source: string): ColorResolvable {
+    const info = Utils.getSourceInfo(source, this.settings.sources_settings);
+    return (info?.color ?? '#ffffff') as ColorResolvable;
   }
+
   private getRepeatEmoji(): string {
     switch (this.player.loopMode) {
       case LoopMode.NONE:
@@ -459,17 +424,19 @@ export class MusicController {
         return '🔁';
     }
   }
+
   private setupEventListeners(): void {
     this.player.on('trackStart', () => this.update());
     this.player.on('trackEnd', () => this.update());
     this.player.on('playerUpdate', () => this.update());
     this.player.on('disconnect', () => this.destroy());
   }
+
   private startUpdateInterval(): void {
     this.updateInterval = setInterval(() => {
       if (this.player.playing && this.player.current) {
         this.update();
       }
-    }, 10000); 
+    }, 10000);
   }
 }
