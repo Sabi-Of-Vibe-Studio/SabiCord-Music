@@ -314,10 +314,6 @@ export class MusicController {
     await interaction.reply({ content: '⏹️ Music stopped and queue cleared!', ephemeral: true });
   }
 
-  private async handleStrShuffle(interaction: ButtonInteraction): Promise<void> {
-    // This should be handleShuffle; ensure method name matches collector switch-case
-  }
-
   private async handleShuffle(interaction: ButtonInteraction): Promise<void> {
     if (this.player.queue.isEmpty()) {
       await interaction.reply({ content: '❌ The queue is empty!', ephemeral: true });
