@@ -115,15 +115,6 @@ export class ErrorHandler {
   }
 
   private logError(error: Error, context: IErrorContext): void {
-    const logData = {
-      error: {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-      },
-      context,
-    };
-
     switch (context.severity) {
       case ErrorSeverity.CRITICAL:
         this.logger.error(`CRITICAL ERROR: ${error.message}`, error, 'error-handler');

@@ -6,15 +6,14 @@
 import {
   CommandInteraction,
   ApplicationCommandOptionType,
-  EmbedBuilder,
-  User
+  EmbedBuilder
 } from 'discord.js';
 import { Discord, Slash, SlashOption, SlashGroup } from 'discordx';
 import { injectable } from 'tsyringe';
-import { connectChannel, getPlayer } from '@audio/index';
-import { Track, Playlist, SearchType, LoopMode } from '@audio/index';
-import { Utils } from '@core/Utils';
-import { logger } from '@core/Logger';
+import { connectChannel, getPlayer, searchTracks } from '../audio/index';
+import { Track, SearchType } from '../audio/index';
+import { Utils } from '../core/Utils';
+import { logger } from '../core/Logger';
 @Discord()
 @SlashGroup({ description: 'Basic music commands', name: 'music' })
 @SlashGroup('music')
@@ -22,6 +21,7 @@ import { logger } from '@core/Logger';
 export class BasicCommands {
   @Slash({ description: 'Play a song or playlist from a URL or search query' })
   async play(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Song URL or search query',
       name: 'query',
@@ -42,8 +42,7 @@ export class BasicCommands {
       required: false,
       type: ApplicationCommandOptionType.String,
     })
-    end: string | undefined,
-    interaction: CommandInteraction
+    end?: string
   ): Promise<void> {
     if (!interaction.guild) {
       await interaction.reply({ content: 'This command can only be used in servers!', ephemeral: true });
@@ -58,40 +57,45 @@ export class BasicCommands {
         });
         return;
       }
-      const tracks = await player.getTracks(query, { 
-        requester: interaction.user,
-        searchType: this.detectSearchType(query)
-      });
-      if (!tracks) {
+      const searchResult = await searchTracks(query, interaction.user, this.detectSearchType(query));
+      if (!searchResult || (!searchResult.tracks && !searchResult.playlist)) {
         await interaction.editReply({ content: '❌ No tracks found for your query!' });
         return;
       }
       const startTime = start ? Utils.parseTime(start) : 0;
       const endTime = end ? Utils.parseTime(end) : 0;
-      if (tracks instanceof Playlist) {
-        const addedCount = await player.addTrack(tracks.tracks, { 
-          startTime, 
-          endTime 
-        });
+
+      if (searchResult.playlist) {
+        const playlist = searchResult.playlist;
+        let addedCount = 0;
+        for (const track of playlist.tracks) {
+          if (startTime > 0) track.setStartTime(startTime);
+          if (endTime > 0) track.setEndTime(endTime);
+          player.queue.add(track);
+          addedCount++;
+        }
         const embed = new EmbedBuilder()
-          .setColor('#00ff00')
+          .setColor(0x00ff00)
           .setTitle('📋 Playlist Added')
-          .setDescription(`Added **${tracks.tracks.length}** tracks from **${tracks.name}**`)
+          .setDescription(`Added **${playlist.tracks.length}** tracks from **${playlist.name}**`)
           .addFields([
-            { name: 'Queue Position', value: `${addedCount}`, inline: true },
+            { name: 'Queue Position', value: `${player.queue.size()}`, inline: true },
             { name: 'Requested by', value: `${interaction.user}`, inline: true },
           ]);
         await interaction.editReply({ embeds: [embed] });
       } else {
-        const track = tracks[0];
-        const position = await player.addTrack(track, { startTime, endTime });
+        const track = searchResult.tracks[0];
+        if (startTime > 0) track.setStartTime(startTime);
+        if (endTime > 0) track.setEndTime(endTime);
+        player.queue.add(track);
+        const position = player.queue.size();
         const embed = new EmbedBuilder()
-          .setColor('#00ff00')
+          .setColor(0x00ff00)
           .setTitle('🎵 Track Added')
           .setDescription(`**[${track.title}](${track.uri})**`)
           .addFields([
             { name: 'Artist', value: track.author, inline: true },
-            { name: 'Duration', value: track.formattedLength, inline: true },
+            { name: 'Duration', value: track.formattedDuration, inline: true },
             { name: 'Queue Position', value: position > 0 ? `${position}` : 'Now Playing', inline: true },
             { name: 'Requested by', value: `${interaction.user}`, inline: true },
           ]);
@@ -100,8 +104,11 @@ export class BasicCommands {
         }
         await interaction.editReply({ embeds: [embed] });
       }
-      if (!player.isPlaying && !player.current) {
-        await player.doNext();
+      if (!player.playing && !player.current) {
+        const nextTrack = player.queue.poll();
+        if (nextTrack) {
+          await player.play(nextTrack);
+        }
       }
     } catch (error) {
       logger.error('Error in play command', error as Error, 'commands');
@@ -156,6 +163,7 @@ export class BasicCommands {
   }
   @Slash({ description: 'Skip the current track' })
   async skip(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Number of tracks to skip',
       name: 'count',
@@ -164,8 +172,7 @@ export class BasicCommands {
       minValue: 1,
       maxValue: 10,
     })
-    count: number = 1,
-    interaction: CommandInteraction
+    count: number = 1
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
@@ -185,7 +192,7 @@ export class BasicCommands {
     }
     if (!player.isPrivileged(interaction.user)) {
       player.skipVotes.add(interaction.user);
-      const required = player.requiredVotes();
+      const required = player.getRequiredVotes();
       if (player.skipVotes.size < required) {
         await interaction.reply({
           content: `🗳️ Vote to skip registered! (${player.skipVotes.size}/${required})`,
@@ -195,7 +202,9 @@ export class BasicCommands {
     }
     const currentTrack = player.current;
     if (count > 1) {
-      player.queue.skipTo(count - 1);
+      for (let i = 0; i < count - 1; i++) {
+        player.queue.poll();
+      }
     }
     await player.stop();
     await interaction.reply({ 
@@ -218,7 +227,7 @@ export class BasicCommands {
     }
     if (!player.isPrivileged(interaction.user)) {
       player.stopVotes.add(interaction.user);
-      const required = player.requiredVotes();
+      const required = player.getRequiredVotes();
       if (player.stopVotes.size < required) {
         await interaction.reply({
           content: `🗳️ Vote to stop registered! (${player.stopVotes.size}/${required})`,
@@ -239,17 +248,17 @@ export class BasicCommands {
     }
     const track = player.current;
     const position = Utils.formatTime(player.position);
-    const duration = track.formattedLength;
+    const duration = track.formattedDuration;
     const progress = Math.floor((player.position / track.length) * 20);
     const progressBar = '▰'.repeat(progress) + '▱'.repeat(20 - progress);
     const embed = new EmbedBuilder()
-      .setColor('#0099ff')
+      .setColor(0x0099ff)
       .setTitle('🎵 Now Playing')
       .setDescription(`**[${track.title}](${track.uri})**`)
       .addFields([
         { name: 'Artist', value: track.author, inline: true },
         { name: 'Requested by', value: `${track.requester}`, inline: true },
-        { name: 'Volume', value: `${player.volume}%`, inline: true },
+        { name: 'Volume', value: `${player.currentVolume}%`, inline: true },
         { name: 'Progress', value: `${progressBar}\n${position} / ${duration}`, inline: false },
       ]);
     if (track.thumbnail) {
@@ -259,6 +268,7 @@ export class BasicCommands {
   }
   @Slash({ description: 'Set the volume of the music player' })
   async volume(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Volume level (0-100)',
       name: 'level',
@@ -267,8 +277,7 @@ export class BasicCommands {
       minValue: 0,
       maxValue: 100,
     })
-    level: number,
-    interaction: CommandInteraction
+    level: number
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
@@ -311,7 +320,7 @@ export class BasicCommands {
                    action === 'skip' ? player.skipVotes :
                    player.stopVotes;
     voteSet.add(interaction.user);
-    const required = player.requiredVotes();
+    const required = player.getRequiredVotes();
     if (voteSet.size < required) {
       return {
         shouldExecute: false,
@@ -320,14 +329,14 @@ export class BasicCommands {
     }
     return { shouldExecute: true };
   }
-  private createTrackEmbed(track: Track, title: string, color: string = '#00ff00'): EmbedBuilder {
+  private createTrackEmbed(track: Track, title: string, color: number = 0x00ff00): EmbedBuilder {
     const embed = new EmbedBuilder()
       .setColor(color)
       .setTitle(title)
       .setDescription(`**[${track.title}](${track.uri})**`)
       .addFields([
         { name: 'Artist', value: track.author, inline: true },
-        { name: 'Duration', value: track.formattedLength, inline: true },
+        { name: 'Duration', value: track.formattedDuration, inline: true },
         { name: 'Requested by', value: `${track.requester}`, inline: true },
       ]);
     if (track.thumbnail) {

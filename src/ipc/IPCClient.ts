@@ -3,14 +3,15 @@
  *
  * Copyright (c) 2025 NirrussVn0
  */
+
 import WebSocket from 'ws';
 import { EventEmitter } from 'events';
 import { Client, Guild } from 'discord.js';
-import { getPlayer } from '@audio/index';
-import { logger } from '@core/Logger';
+import { getPlayer } from '../audio/index';
+import { logger } from '../core/Logger';
 import { container } from 'tsyringe';
-import { Settings } from '@core/Settings';
-import { Database } from '@core/Database';
+import { Settings } from '../core/Settings';
+import { Database } from '../core/Database';
 export interface IIPCMessage {
   op: string;
   d: any;
@@ -32,7 +33,7 @@ export class IPCClient extends EventEmitter {
   private readonly client: Client;
   private readonly settings: Settings;
   private readonly database: Database;
-  private websocket?: WebSocket;
+  private websocket?: WebSocket | undefined;
   private connected = false;
   private reconnectAttempts = 0;
   private readonly maxReconnectAttempts = 5;

@@ -3,32 +3,34 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { 
-  VoiceChannel, 
-  Guild, 
-  User, 
+import {
+  VoiceChannel,
+  Guild,
+  User,
+  PermissionsBitField
+} from 'discord.js';
+import {
   VoiceConnection,
   joinVoiceChannel,
   VoiceConnectionStatus,
   entersState,
   DiscordGatewayAdapterCreator
-} from 'discord.js';
+} from '@discordjs/voice';
 import { EventEmitter } from 'events';
-import { Track, Playlist } from './Track';
+import { Track } from './Track';
 import { Queue, FairQueue } from './Queue';
 import { Filters } from './Filters';
 import { Node, NodePool } from './Node';
-import { SearchType, LoopMode, RequestMethod, PlayerState, TrackEndReason } from './Enums';
+import { LoopMode, RequestMethod, PlayerState, TrackEndReason } from './Enums';
 import { 
   PlayerNotConnected, 
   PlayerAlreadyConnected, 
   InvalidChannelPermissions,
   AudioException 
 } from './Exceptions';
-import { ILogger } from '@core/Logger';
-import { Utils } from '@core/Utils';
+import { ILogger } from '../core/Logger';
 import { container } from 'tsyringe';
-import { Database } from '@core/Database';
+import { Database } from '../core/Database';
 export interface IPlayerOptions {
   guild: Guild;
   channel: VoiceChannel;
@@ -51,19 +53,24 @@ export interface IPlayerEvents {
 export class Player extends EventEmitter {
   private readonly logger: ILogger;
   private connection?: VoiceConnection;
-  private currentTrack?: Track;
+  private currentTrack: Track | undefined;
   private filters: Filters;
   private state: PlayerState = PlayerState.IDLE;
   private volume = 100;
   private paused = false;
   private connected = false;
   private loop: LoopMode = LoopMode.NONE;
-  private skipVotes = new Set<string>();
+  private trackPosition = 0;
   private joinTime: number;
+  public readonly pauseVotes = new Set<User>();
+  public readonly resumeVotes = new Set<User>();
+  public readonly stopVotes = new Set<User>();
+  public readonly shuffleVotes = new Set<User>();
+  public readonly skipVotes = new Set<User>();
   public readonly guild: Guild;
   public readonly channel: VoiceChannel;
   public readonly node: Node;
-  public readonly queue: Queue;
+  public readonly queue: Queue | FairQueue;
   constructor(options: IPlayerOptions) {
     super();
     this.guild = options.guild;
@@ -96,6 +103,9 @@ export class Player extends EventEmitter {
   }
   public get loopMode(): LoopMode {
     return this.loop;
+  }
+  public get position(): number {
+    return this.trackPosition;
   }
   public get playerState(): PlayerState {
     return this.state;
@@ -249,22 +259,43 @@ export class Player extends EventEmitter {
     });
     this.logger.debug(`Filters applied in ${this.guild.name}`, 'audio');
   }
-  public addSkipVote(userId: string): boolean {
-    this.skipVotes.add(userId);
+  public async setFilters(filters: Filters): Promise<void> {
+    this.filters = filters;
+    await this.applyFilters();
+  }
+  public addSkipVote(user: User): boolean {
+    this.skipVotes.add(user);
     return this.skipVotes.size >= this.getRequiredVotes();
   }
-  public removeSkipVote(userId: string): void {
-    this.skipVotes.delete(userId);
+  public removeSkipVote(user: User): void {
+    this.skipVotes.delete(user);
   }
   public clearVotes(): void {
     this.skipVotes.clear();
+    this.pauseVotes.clear();
+    this.resumeVotes.clear();
+    this.stopVotes.clear();
+    this.shuffleVotes.clear();
   }
   public getSkipVotes(): number {
     return this.skipVotes.size;
   }
   public getRequiredVotes(): number {
-    const voiceMembers = this.channel.members.filter(m => !m.user.bot).size;
+    const voiceMembers = this.channel.members.filter((m: any) => !m.user.bot).size;
     return Math.ceil(voiceMembers / 2);
+  }
+  public requiredVotes(): number {
+    return this.getRequiredVotes();
+  }
+  public isPrivileged(user: User): boolean {
+    const member = this.guild.members.cache.get(user.id);
+    if (!member) return false;
+    return member.permissions.has([PermissionsBitField.Flags.ManageChannels, PermissionsBitField.Flags.Administrator]) ||
+           member.id === this.guild.ownerId ||
+           this.channel.members.size <= 2;
+  }
+  public isUserInChannel(user: User): boolean {
+    return this.channel.members.has(user.id);
   }
   public async destroy(): Promise<void> {
     try {
@@ -295,7 +326,7 @@ export class Player extends EventEmitter {
   }
   private validateChannelPermissions(): void {
     const permissions = this.channel.permissionsFor(this.guild.members.me!);
-    if (!permissions?.has(['Connect', 'Speak'])) {
+    if (!permissions?.has([PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak])) {
       throw new InvalidChannelPermissions('Missing required voice channel permissions');
     }
   }
@@ -342,11 +373,12 @@ export class Player extends EventEmitter {
     });
   }
   private async sendPlayerUpdate(): Promise<void> {
+    const joinConfig = this.connection?.joinConfig as any;
     await this.node.send(RequestMethod.PATCH, `sessions/${this.node.identifier}/players/${this.guild.id}`, {
       voice: {
-        token: this.connection?.joinConfig.token,
-        endpoint: this.connection?.joinConfig.endpoint,
-        sessionId: this.connection?.joinConfig.sessionId,
+        token: joinConfig?.token,
+        endpoint: joinConfig?.endpoint,
+        sessionId: joinConfig?.sessionId,
       },
     });
   }
@@ -359,7 +391,7 @@ export class Player extends EventEmitter {
       this.logger.error('Failed to add track to user history', error as Error, 'audio');
     }
   }
-  private handleTrackStart(message: any): void {
+  private handleTrackStart(_message: any): void {
     if (this.currentTrack) {
       this.emit('trackStart', this, this.currentTrack);
     }

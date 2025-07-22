@@ -71,3 +71,9 @@ export enum FilterType {
   CHANNEL_MIX = 'channelMix',
   LOW_PASS = 'lowPass',
 }
+
+export enum LoopType {
+  NONE = 'none',
+  TRACK = 'track',
+  QUEUE = 'queue',
+}

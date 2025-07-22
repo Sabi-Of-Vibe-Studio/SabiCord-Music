@@ -3,14 +3,8 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { 
-  VoiceChannel, 
-  VoiceConnection,
-  joinVoiceChannel,
-  VoiceConnectionStatus,
-  entersState,
-  DiscordGatewayAdapterCreator
-} from 'discord.js';
+import { VoiceChannel } from 'discord.js';
+import { VoiceConnection, joinVoiceChannel, VoiceConnectionStatus, entersState, DiscordGatewayAdapterCreator } from '@discordjs/voice';
 import { EventEmitter } from 'events';
 import { ILogger } from '../core/Logger';
 export class VoiceConnectionManager extends EventEmitter {

@@ -5,9 +5,8 @@
  */
 import { User } from 'discord.js';
 import { SearchType } from './Enums';
-import { Utils } from '@core/Utils';
-import { container } from 'tsyringe';
-import { Settings } from '@core/Settings';
+import { Utils } from '../core/Utils';
+
 export interface ITrackInfo {
   identifier: string;
   title: string;
@@ -25,14 +24,14 @@ export interface IPlaylistInfo {
   selectedTrack?: number;
 }
 export class Track {
-  private readonly trackId?: string;
+  private readonly trackId?: string | undefined;
   public readonly info: ITrackInfo;
   public readonly identifier: string;
   public readonly title: string;
   public readonly author: string;
   public readonly uri: string;
   public readonly source: string;
-  public readonly thumbnail?: string;
+  public readonly thumbnail?: string | undefined;
   public readonly emoji: string;
   public readonly length: number;
   public readonly requester: User;
@@ -42,10 +41,10 @@ export class Track {
   public endTime?: number;
   private readonly searchType: SearchType;
   constructor(options: {
-    trackId?: string;
+    trackId?: string | undefined;
     info: ITrackInfo;
     requester: User;
-    searchType?: SearchType;
+    searchType?: SearchType | undefined;
   }) {
     this.trackId = options.trackId;
     this.info = options.info;
@@ -87,6 +86,9 @@ export class Track {
   }
   public get duration(): string {
     return this.isStream ? 'LIVE' : Utils.formatTime(this.length);
+  }
+  public get formattedLength(): string {
+    return this.duration;
   }
   public get formattedDuration(): string {
     if (this.isStream) return 'LIVE';
@@ -147,16 +149,16 @@ export class Playlist {
   public readonly selectedTrack: number;
   public readonly requester: User;
   public readonly source: string;
-  public readonly uri?: string;
-  public readonly thumbnail?: string;
+  public readonly uri?: string | undefined;
+  public readonly thumbnail?: string | undefined;
   constructor(options: {
     name: string;
     tracks: Track[];
-    selectedTrack?: number;
+    selectedTrack?: number | undefined;
     requester: User;
     source: string;
-    uri?: string;
-    thumbnail?: string;
+    uri?: string | undefined;
+    thumbnail?: string | undefined;
   }) {
     this.name = options.name;
     this.tracks = options.tracks;

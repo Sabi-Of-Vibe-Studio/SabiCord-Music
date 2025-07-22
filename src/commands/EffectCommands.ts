@@ -3,16 +3,15 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { 
-  CommandInteraction, 
-  ApplicationCommandOptionType, 
-  EmbedBuilder 
+import {
+  CommandInteraction,
+  ApplicationCommandOptionType
 } from 'discord.js';
 import { Discord, Slash, SlashOption, SlashGroup } from 'discordx';
 import { injectable } from 'tsyringe';
-import { getPlayer } from '@audio/index';
-import { Filters } from '@audio/index';
-import { logger } from '@core/Logger';
+import { getPlayer } from '../audio/index';
+import { Filters } from '../audio/index';
+import { logger } from '../core/Logger';
 @Discord()
 @SlashGroup({ description: 'Audio effect and filter commands', name: 'effects' })
 @SlashGroup('effects')
@@ -20,6 +19,7 @@ import { logger } from '@core/Logger';
 export class EffectCommands {
   @Slash({ description: 'Apply bass boost effect' })
   async bassboost(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Bass boost level (1-5)',
       name: 'level',
@@ -28,8 +28,7 @@ export class EffectCommands {
       minValue: 1,
       maxValue: 5,
     })
-    level: number = 1,
-    interaction: CommandInteraction
+    level: number = 1
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
@@ -51,10 +50,12 @@ export class EffectCommands {
       return;
     }
     try {
-      const filters = Filters.createBassBoost(level);
+      const filters = new Filters();
+      const bassBoostBands = this.createBassBoostEqualizer(level);
+      filters.setEqualizer(bassBoostBands);
       await player.setFilters(filters);
-      await interaction.reply({ 
-        content: `🎵 Bass boost effect applied! (Level: ${level})` 
+      await interaction.reply({
+        content: `🎵 Bass boost effect applied! (Level: ${level})`
       });
     } catch (error) {
       logger.error('Error applying bass boost', error as Error, 'commands');
@@ -66,6 +67,7 @@ export class EffectCommands {
   }
   @Slash({ description: 'Apply nightcore effect' })
   async nightcore(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Speed multiplier (0.5-2.0)',
       name: 'speed',
@@ -83,8 +85,7 @@ export class EffectCommands {
       minValue: 0.5,
       maxValue: 2.0,
     })
-    pitch: number = 1.2,
-    interaction: CommandInteraction
+    pitch: number = 1.2
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
@@ -121,6 +122,7 @@ export class EffectCommands {
   }
   @Slash({ description: 'Apply vaporwave effect' })
   async vaporwave(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Speed multiplier (0.5-1.0)',
       name: 'speed',
@@ -138,8 +140,7 @@ export class EffectCommands {
       minValue: 0.5,
       maxValue: 1.0,
     })
-    pitch: number = 0.8,
-    interaction: CommandInteraction
+    pitch: number = 0.8
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
@@ -176,6 +177,7 @@ export class EffectCommands {
   }
   @Slash({ description: 'Apply 8D audio effect' })
   async eightd(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Rotation speed (0.1-1.0)',
       name: 'speed',
@@ -184,8 +186,7 @@ export class EffectCommands {
       minValue: 0.1,
       maxValue: 1.0,
     })
-    speed: number = 0.2,
-    interaction: CommandInteraction
+    speed: number = 0.2
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
@@ -209,8 +210,8 @@ export class EffectCommands {
     try {
       const filters = Filters.create8D(speed);
       await player.setFilters(filters);
-      await interaction.reply({ 
-        content: `🎵 8D audio effect applied! (Rotation speed: ${speed}Hz)` 
+      await interaction.reply({
+        content: `🎵 8D audio effect applied! (Rotation speed: ${speed}Hz)`
       });
     } catch (error) {
       logger.error('Error applying 8D effect', error as Error, 'commands');
@@ -222,6 +223,7 @@ export class EffectCommands {
   }
   @Slash({ description: 'Apply karaoke effect (remove vocals)' })
   async karaoke(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Karaoke level (0.1-1.0)',
       name: 'level',
@@ -230,8 +232,7 @@ export class EffectCommands {
       minValue: 0.1,
       maxValue: 1.0,
     })
-    level: number = 1.0,
-    interaction: CommandInteraction
+    level: number = 1.0
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
@@ -269,6 +270,7 @@ export class EffectCommands {
   }
   @Slash({ description: 'Apply tremolo effect' })
   async tremolo(
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Tremolo frequency (0.1-20.0)',
       name: 'frequency',
@@ -286,8 +288,7 @@ export class EffectCommands {
       minValue: 0.1,
       maxValue: 1.0,
     })
-    depth: number = 0.5,
-    interaction: CommandInteraction
+    depth: number = 0.5
   ): Promise<void> {
     const player = getPlayer(interaction.guildId!);
     if (!player) {
@@ -363,21 +364,16 @@ export class EffectCommands {
       await interaction.reply({ content: '❌ No music player is active!', ephemeral: true });
       return;
     }
-    const filters = player.filters;
-    const activeFilters = filters.getAll();
-    if (activeFilters.length === 0) {
-      await interaction.reply({ content: '🎵 No audio effects are currently active.' });
-      return;
-    }
-    const embed = new EmbedBuilder()
-      .setColor('#0099ff')
-      .setTitle('🎵 Active Audio Effects')
-      .setDescription(
-        activeFilters
-          .map(filter => `**${filter.name}**: ${filter.type}`)
-          .join('\n')
-      )
-      .setFooter({ text: `${activeFilters.length} effect(s) active` });
-    await interaction.reply({ embeds: [embed] });
+    await interaction.reply({
+      content: '🎵 Audio effects status is currently not available. Use individual effect commands to apply filters.'
+    });
+  }
+  private createBassBoostEqualizer(level: number): Array<{ band: number; gain: number }> {
+    const bassBoostGains = [0.2, 0.15, 0.1, 0.05, 0.0, -0.05, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1, -0.1];
+    const multiplier = level * 0.25;
+    return bassBoostGains.map((gain, index) => ({
+      band: index,
+      gain: gain * multiplier
+    }));
   }
 }

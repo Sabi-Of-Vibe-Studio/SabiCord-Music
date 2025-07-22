@@ -3,7 +3,7 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { PlayerState } from '../voicelink/Enums';
+import { PlayerState } from '../audio/Enums';
 import { ILogger } from '../core/Logger';
 import { EventEmitter } from 'events';
 export class PlayerStateManager extends EventEmitter {
@@ -20,7 +20,7 @@ export class PlayerStateManager extends EventEmitter {
     const previousState = this.currentState;
     if (!this.isValidStateTransition(previousState, newState)) {
       this.logger.warn(
-        `Invalid state transition from ${PlayerState[previousState]} to ${PlayerState[newState]}`,
+        `Invalid state transition from ${previousState} to ${newState}`,
         'player-state'
       );
       return;
@@ -28,7 +28,7 @@ export class PlayerStateManager extends EventEmitter {
     this.currentState = newState;
     this.recordStateChange(newState);
     this.logger.debug(
-      `Player state changed: ${PlayerState[previousState]} -> ${PlayerState[newState]}`,
+      `Player state changed: ${previousState} -> ${newState}`,
       'player-state'
     );
     this.emit('stateChange', newState, previousState);
@@ -66,7 +66,7 @@ export class PlayerStateManager extends EventEmitter {
     this.currentState = state;
     this.recordStateChange(state);
     this.logger.warn(
-      `Player state forcibly changed: ${PlayerState[previousState]} -> ${PlayerState[state]}`,
+      `Player state forcibly changed: ${previousState} -> ${state}`,
       'player-state'
     );
     this.emit('stateChange', state, previousState);

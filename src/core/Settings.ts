@@ -6,7 +6,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { config } from 'dotenv';
-import { ISettings, INodeConfig, IActivityConfig, ILoggingConfig, IIPCConfig, IControllerConfig } from '@interfaces/ISettings';
+import { ISettings, INodeConfig, IActivityConfig, ILoggingConfig, IIPCConfig, IControllerConfig } from '../interfaces/ISettings';
 config();
 export class Settings implements ISettings {
   public token: string = process.env.DISCORD_TOKEN || '?';
@@ -75,7 +75,7 @@ export class Settings implements ISettings {
     this.cooldowns = fileSettings.cooldowns || {};
     this.aliases = fileSettings.aliases || {};
   }
-  private validate(): void {
+  public validate(): void {
     const requiredSettings = ['token', 'client_id', 'mongodb_url', 'mongodb_name'];
     const missingSettings = requiredSettings.filter(setting => !this[setting as keyof this]);
     if (missingSettings.length > 0) {

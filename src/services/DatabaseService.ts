@@ -5,7 +5,7 @@
  */
 import { Database } from '../core/Database';
 import { IDatabaseConfig } from '../interfaces/ISettings';
-import { IDatabaseConnection, IGuildSettingsRepository, IUserRepository } from '../interfaces/IRepository';
+import { IDatabaseConnection, IGuildSettingsRepository, IUserRepository } from '../interfaces/IDatabase';
 import { ILogger } from '../core/Logger';
 export class DatabaseService {
   private database: Database;
@@ -37,6 +37,6 @@ export class DatabaseService {
     this.logger.info('Database service closed', 'database');
   }
   public isConnected(): boolean {
-    return this.database.connection.isConnected;
+    return this.database.connection.isConnected();
   }
 }

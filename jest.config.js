@@ -17,7 +17,7 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
     '^@core/(.*)$': '<rootDir>/src/core/$1',
     '^@interfaces/(.*)$': '<rootDir>/src/interfaces/$1',
-    '^@voicelink/(.*)$': '<rootDir>/src/voicelink/$1',
+    '^@audio/(.*)$': '<rootDir>/src/audio/$1',
     '^@commands/(.*)$': '<rootDir>/src/commands/$1',
     '^@views/(.*)$': '<rootDir>/src/views/$1',
     '^@ipc/(.*)$': '<rootDir>/src/ipc/$1',

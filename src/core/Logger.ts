@@ -7,12 +7,13 @@ import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
-import { ILoggingConfig } from '@interfaces/ISettings';
+import { ILoggingConfig } from '../interfaces/ISettings';
 export interface ILogger {
   info(message: string, service?: string): void;
   warn(message: string, service?: string): void;
   error(message: string, error?: Error, service?: string): void;
   debug(message: string, service?: string): void;
+  log(level: string, message: string, service?: string): void;
 }
 export interface ILoggerFactory {
   createLogger(config: ILoggingConfig): ILogger;
@@ -85,6 +86,9 @@ export class Logger implements ILogger {
   public debug(message: string, service?: string): void {
     this.logger.debug(message, { service });
   }
+  public log(level: string, message: string, service?: string): void {
+    this.logger.log(level, message, { service });
+  }
   public verbose(message: string, service?: string): void {
     this.logger.verbose(message, { service });
   }
@@ -112,6 +116,7 @@ export const logger = {
   warn: (message: string, service?: string) => Logger.getInstance().warn(message, service),
   error: (message: string, error?: Error, service?: string) => Logger.getInstance().error(message, error, service),
   debug: (message: string, service?: string) => Logger.getInstance().debug(message, service),
+  log: (level: string, message: string, service?: string) => Logger.getInstance().log(level, message, service),
   verbose: (message: string, service?: string) => Logger.getInstance().verbose(message, service),
   setLevel: (level: string, service?: string) => Logger.getInstance().setLevel(level, service),
   child: (service: string) => Logger.getInstance().child(service),

@@ -53,14 +53,14 @@ export interface ILowPassSettings {
 export class Filters {
   private volume = 1.0;
   private equalizer: IEqualizerBand[] = [];
-  private karaoke?: IKaraokeSettings;
-  private timescale?: ITimescaleSettings;
-  private tremolo?: ITremoloSettings;
-  private vibrato?: IVibratoSettings;
-  private rotation?: IRotationSettings;
-  private distortion?: IDistortionSettings;
-  private channelMix?: IChannelMixSettings;
-  private lowPass?: ILowPassSettings;
+  private karaoke: IKaraokeSettings | undefined;
+  private timescale: ITimescaleSettings | undefined;
+  private tremolo: ITremoloSettings | undefined;
+  private vibrato: IVibratoSettings | undefined;
+  private rotation: IRotationSettings | undefined;
+  private distortion: IDistortionSettings | undefined;
+  private channelMix: IChannelMixSettings | undefined;
+  private lowPass: ILowPassSettings | undefined;
   public setVolume(volume: number): this {
     if (volume < 0 || volume > 5) {
       throw new InvalidFilterValue('Volume must be between 0 and 5');
@@ -166,6 +166,12 @@ export class Filters {
     this.lowPass = undefined;
     return this;
   }
+  public getAll(): any {
+    return this.toJSON();
+  }
+  public get filters(): any {
+    return this.toJSON();
+  }
   public toJSON(): any {
     const filters: any = {};
     if (this.volume !== 1.0) {
@@ -197,6 +203,24 @@ export class Filters {
     }
     if (this.lowPass) {
       filters.lowPass = this.lowPass;
+    }
+    return filters;
+  }
+  public static createNightcore(speed: number = 1.2, pitch: number = 1.2): Filters {
+    const filters = new Filters();
+    filters.setTimescale({ speed, pitch });
+    return filters;
+  }
+  public static createVaporwave(speed: number = 0.8, pitch: number = 0.8): Filters {
+    const filters = new Filters();
+    filters.setTimescale({ speed, pitch });
+    return filters;
+  }
+  public static create8D(speed: number = 1.0): Filters {
+    const filters = new Filters();
+    filters.setRotation({ rotationHz: 0.2 });
+    if (speed !== 1.0) {
+      filters.setTimescale({ speed });
     }
     return filters;
   }

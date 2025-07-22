@@ -3,7 +3,7 @@
  * 
  * Copyright (c) 2025 NirrussVn0
  */
-import { Guild, User, VoiceChannel } from 'discord.js';
+import { Guild, VoiceChannel } from 'discord.js';
 export interface IDiscordClient {
   start(): Promise<void>;
   shutdown(): Promise<void>;
@@ -17,7 +17,6 @@ export interface IEventHandler {
   setupEventHandlers(): void;
   onReady(): Promise<void>;
   onInteractionCreate(interaction: any): Promise<void>;
-  onMessageCreate(message: any): Promise<void>;
 }
 export interface ICommandManager {
   importCommands(): Promise<void>;

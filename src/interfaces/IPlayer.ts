@@ -4,7 +4,7 @@
  * Copyright (c) 2025 NirrussVn0
  */
 import { VoiceChannel, Guild, User } from 'discord.js';
-import { ITrackData } from './ISettings';
+
 export enum SearchType {
   YOUTUBE = 'ytsearch',
   YOUTUBE_MUSIC = 'ytmsearch',

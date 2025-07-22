@@ -4,7 +4,7 @@
  * Copyright (c) 2025 NirrussVn0
  */
 import { VoiceChannel, CommandInteraction, Message, User } from 'discord.js';
-import { Player, IPlayerOptions } from './Player';
+import { Player } from './Player';
 import { NodePool } from './Node';
 import { AudioException } from './Exceptions';
 export * from './Enums';
