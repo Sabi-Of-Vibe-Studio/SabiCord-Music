@@ -5,7 +5,7 @@
  */
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
-import { logger } from '@core/Logger';
+import { logger } from '../core/Logger';
 export interface ITranslationData {
   [key: string]: string | ITranslationData;
 }

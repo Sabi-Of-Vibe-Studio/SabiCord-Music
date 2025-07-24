@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "commonjs",
-    "lib": ["ES2022", "DOM"],
+    "target": "ESNext",
+    "module": "ESNext",
+    "lib": ["ESNext", "DOM"],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -24,9 +24,9 @@
     "noPropertyAccessFromIndexSignature": false,
     "noUncheckedIndexedAccess": true,
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
+    "emitDecoratorMetadata": false,
     "allowSyntheticDefaultImports": true,
-    "moduleResolution": "node",
+    "moduleResolution": "Node",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
@@ -54,7 +54,7 @@
   ],
   "ts-node": {
     "require": ["tsconfig-paths/register"],
-    "esm": false,
+    "esm": true,
     "experimentalSpecifierResolution": "node",
     "compilerOptions": {
       "module": "commonjs",

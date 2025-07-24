@@ -1,13 +1,17 @@
-/**
- * MIT License
- *
- * Copyright (c) 2025 NirrussVn0
- */
+import { Logger as Log } from "tslog";
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
 import { existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
 import { ILoggingConfig } from '../interfaces/ISettings';
+import { join } from 'path';
+void Log;
+// log.silly("I am a silly log.");
+// log.trace("I am a trace log.");
+// log.debug("I am a debug log.");
+// log.info("I am an info log.");
+// log.warn("I am a warn log with a json object:", { foo: "bar" });
+// log.error("I am an error log.");
+// log.fatal(new Error("I am a pretty Error with a stacktrace."));
 export interface ILogger {
   info(message: string, service?: string): void;
   warn(message: string, service?: string): void;

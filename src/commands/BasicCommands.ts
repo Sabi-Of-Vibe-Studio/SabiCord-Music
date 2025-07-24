@@ -329,7 +329,7 @@ export class BasicCommands {
     }
     return { shouldExecute: true };
   }
-  private createTrackEmbed(track: Track, title: string, color: number = 0x00ff00): EmbedBuilder {
+  public createTrackEmbed(track: Track, title: string, color: number = 0x00ff00): EmbedBuilder {
     const embed = new EmbedBuilder()
       .setColor(color)
       .setTitle(title)
@@ -344,7 +344,7 @@ export class BasicCommands {
     }
     return embed;
   }
-  private async handleCommandError(interaction: CommandInteraction, message: string): Promise<void> {
+  public async handleCommandError(interaction: CommandInteraction, message: string): Promise<void> {
     if (interaction.deferred) {
       await interaction.editReply({ content: message });
     } else {

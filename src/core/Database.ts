@@ -53,7 +53,7 @@ class CacheManager<T> implements ICacheManager<T> {
 class DatabaseConnection implements IDatabaseConnection {
   public client: MongoClient;
   private connected = false;
-  constructor(private url: string) {
+  constructor(public url: string) {
     this.client = new MongoClient(url);
   }
   public isConnected(): boolean {
@@ -301,7 +301,7 @@ export class Database implements IDatabase {
   public users!: IUserRepository;
   private db!: Db;
   private cache: IDatabaseCache;
-  constructor(private url: string, private dbName: string) {
+  constructor(public url: string, private dbName: string) {
     this.connection = new DatabaseConnection(url);
     this.cache = {
       settings: new CacheManager<IGuildSettings>(),

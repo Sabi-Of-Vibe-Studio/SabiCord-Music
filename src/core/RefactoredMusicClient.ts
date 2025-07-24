@@ -4,7 +4,7 @@
  * Copyright (c) 2025 NirrussVn0
  */
 import 'reflect-metadata';
-import { GatewayIntentBits, Client } from 'discord.js';
+import { IntentsBitField, Client, Message, Interaction } from 'discord.js';
 import { Client as DiscordXClient } from 'discordx';
 import { IDiscordClient, IServiceInitializer } from '../interfaces/IClient';
 import { ILogger, LoggerFactory } from './Logger';
@@ -13,6 +13,25 @@ import { ConfigurationService } from '../services/ConfigurationService';
 import { DatabaseService } from '../services/DatabaseService';
 import { EventHandlerService } from '../services/EventHandlerService';
 import { CommandService } from '../services/CommandService';
+import { dirname, importx } from "@discordx/importer";
+import dotenv from "dotenv";
+dotenv.config();
+
+export const client = new DiscordXClient({
+  intents: [
+    IntentsBitField.Flags.Guilds,
+    IntentsBitField.Flags.GuildMembers,
+    IntentsBitField.Flags.GuildMessages,
+    IntentsBitField.Flags.GuildMessageReactions,
+    IntentsBitField.Flags.GuildVoiceStates,
+    IntentsBitField.Flags.MessageContent,
+  ],
+  silent: false,
+  simpleCommand: {
+    prefix: process.env.BOT_PREFIX?.toString() || "!",
+  },
+});
+
 export class SabiCordMusicClient extends DiscordXClient implements IDiscordClient, IServiceInitializer {
   private musicLogger!: ILogger;
   private serviceContainer: ServiceContainer;
@@ -20,15 +39,20 @@ export class SabiCordMusicClient extends DiscordXClient implements IDiscordClien
   private databaseService!: DatabaseService;
   private eventHandlerService!: EventHandlerService;
   private commandService!: CommandService;
+  
   constructor() {
     super({
       intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildVoiceStates,
+        IntentsBitField.Flags.Guilds,
+        IntentsBitField.Flags.GuildMembers,
+        IntentsBitField.Flags.GuildMessages,
+        IntentsBitField.Flags.GuildMessageReactions,
+        IntentsBitField.Flags.GuildVoiceStates,
+        IntentsBitField.Flags.MessageContent,
       ],
-      silent: true,
+      silent: false,
       simpleCommand: {
-        prefix: '?',
+        prefix: process.env.BOT_PREFIX?.toString() || "!",
       },
     });
     this.serviceContainer = ServiceContainer.getInstance();
@@ -72,6 +96,26 @@ export class SabiCordMusicClient extends DiscordXClient implements IDiscordClien
     }
     this.serviceContainer.registerClient(this);
   }
+  public async run(): Promise<void> {
+    await importx(`${dirname(import.meta.url)}/{event,../commands}/**/*.{ts,js}`);
+    client.once("ready", async () => {
+      await client.initApplicationCommands();
+      await client.clearApplicationCommands(
+        ...client.guilds.cache.map((g) => g.id)
+    );
+      client.on("interactionCreate", (interaction: Interaction) => {
+      client.executeInteraction(interaction);
+      });
+      client.on("messageCreate", (message: Message) => {
+      void client.executeCommand(message);
+      });
+    });
+    if (!process.env.DISCORD_TOKEN) {
+      throw Error("Could not find DISCORD_TOKEN in your environment");
+    }
+    // await client.login(process.env.DISCORD_TOKEN);
+  }
+
   public override isReady(): this is SabiCordMusicClient & Client<true> {
     return super.isReady();
   }
@@ -90,15 +134,20 @@ export class SabiCordMusicClient extends DiscordXClient implements IDiscordClien
       this.musicLogger.info('Database connected successfully', 'client');
       this.eventHandlerService.setupEventHandlers();
       await this.commandService.importCommands();
+      this.musicLogger.info('Commands imported successfully', 'client');
       const discordConfig = this.configService.getDiscordConfig();
-      await this.login(discordConfig.token);
+      await client.login(discordConfig.token);
+      void this.run();
       this.musicLogger.info('Bot started successfully', 'client');
+      this.musicLogger.info('Application commands synchronized successfully', 'client');
     } catch (error) {
       this.musicLogger.error('Failed to start bot', error as Error, 'client');
       process.exit(1);
     }
   }
+  
 }
+
 process.on('SIGINT', async () => {
   const serviceContainer = ServiceContainer.getInstance();
   if (serviceContainer.isRegistered('Client')) {
