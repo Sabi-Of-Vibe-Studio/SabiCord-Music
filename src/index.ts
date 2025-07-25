@@ -34,27 +34,20 @@ async function run() {
 
   await importx(`${dirname(import.meta.url)}/{audio,commands,core,events,interfaces,ipc,localization,services,types,views}/**/*.{ts,js}`);
   
-  bot.once("ready", async () => {
-  await bot.initApplicationCommands();
-
   // It must only be executed once
-  await bot.clearApplicationCommands(
-    ...bot.guilds.cache.map((g) => g.id)
-  );
+  await bot.clearApplicationCommands( ...bot.guilds.cache.map((g) => g.id));
+  bot.once("ready", async () => { await bot.initApplicationCommands();
 
   console.log("Bot started");
   });
 
-  bot.on("interactionCreate", (interaction: Interaction) => {
-  bot.executeInteraction(interaction);
+  bot.on("interactionCreate", (interaction: Interaction) => { bot.executeInteraction(interaction);
   });
 
-  bot.on("messageCreate", (message: Message) => {
-    void bot.executeCommand(message);
+  bot.on("messageCreate", (message: Message) => { void bot.executeCommand(message);
   });
 
-  if (!process.env.DISCORD_TOKEN) {
-    throw Error("Could not find DISCORD_TOKEN in your environment");
+  if (!process.env.DISCORD_TOKEN) { throw Error("Could not find DISCORD_TOKEN in your environment");
   }
   await bot.login(process.env.DISCORD_TOKEN);
 }
