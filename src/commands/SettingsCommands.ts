@@ -1,3 +1,4 @@
+import { RPCCommandGetGuildPayload } from './../../node_modules/@discordjs/builders/node_modules/discord-api-types/rpc/v10.d';
 import { Guild } from 'discord.js';
 /**
  * MIT License
@@ -5,7 +6,7 @@ import { Guild } from 'discord.js';
  * Copyright (c) 2025 NirrussVn0
  */
 import { 
-  ChatInputCommandInteraction, 
+  CommandInteraction,
   ApplicationCommandOptionType, 
   EmbedBuilder,
   PermissionFlagsBits,
@@ -28,7 +29,7 @@ import { logger } from '../core/Logger';
 export class SettingsCommands {
   @Slash({ description: 'Set the bot prefix for this server' })
   async prefix(
-    port_interaction: ChatInputCommandInteraction,
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'New prefix (leave empty to view current)',
       name: 'prefix',
@@ -36,12 +37,12 @@ export class SettingsCommands {
       type: ApplicationCommandOptionType.String,
       maxLength: 5,
     })
-    prefix?: string
+    
+    prefix?: string, 
   ): Promise<void> {
-    const interaction = port_interaction;
     const validation = await this.validateGuildAndPermissions(interaction);
     if (!validation.isValid) {
-      interaction.reply({ content: validation.errorMessage! });
+      interaction.reply({ content: validation.errorMessage!, ephemeral: true});
       return;
     }
     try {
@@ -87,10 +88,9 @@ export class SettingsCommands {
       required: false,
       type: ApplicationCommandOptionType.String,
     })
-    port_interaction: ChatInputCommandInteraction,
+    interaction: CommandInteraction,
     language?: string
   ): Promise<void> {
-    const interaction = port_interaction;
     if (!interaction.guild) {
       await interaction.reply({ content: '❌ This command can only be used in servers!', ephemeral: true });
       return;
@@ -129,7 +129,7 @@ export class SettingsCommands {
   }
   @Slash({ description: 'Set a music request channel' })
   async musicchannel(
-    port_interaction: ChatInputCommandInteraction,
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Text channel for music requests',
       name: 'channel',
@@ -139,7 +139,6 @@ export class SettingsCommands {
     })
     channel?: TextChannel
   ): Promise<void> {
-    const interaction = port_interaction;
     if (!interaction.guild) {
       await interaction.reply({ content: '❌ This command can only be used in servers!', ephemeral: true });
       return;
@@ -190,9 +189,8 @@ export class SettingsCommands {
       type: ApplicationCommandOptionType.Boolean,
     })
     enabled: boolean,
-    port_interaction: ChatInputCommandInteraction
+    interaction: CommandInteraction
   ): Promise<void> {
-    const interaction = port_interaction;
     if (!interaction.guild) {
       await interaction.reply({ content: '❌ This command can only be used in servers!', ephemeral: true });
       return;
@@ -222,8 +220,7 @@ export class SettingsCommands {
     }
   }
   @Slash({ description: 'View current server settings' })
-  async view(port_interaction: ChatInputCommandInteraction): Promise<void> {
-    const interaction = port_interaction;
+  async view(interaction: CommandInteraction): Promise<void> {
     if (!interaction.guild) {
       await interaction.reply({ content: '❌ This command can only be used in servers!', ephemeral: true });
       return;
@@ -260,7 +257,7 @@ export class SettingsCommands {
   }
   @Slash({ description: 'Connect the bot to a voice channel' })
   async connect(
-    port_interaction: ChatInputCommandInteraction,
+    interaction: CommandInteraction,
     @SlashOption({
       description: 'Voice channel to connect to',
       name: 'channel',
@@ -270,7 +267,6 @@ export class SettingsCommands {
     })
     channel?: VoiceChannel
   ): Promise<void> {
-    const interaction = port_interaction;
     if (!interaction.guild) {
       await interaction.reply({ content: '❌ This command can only be used in servers!', ephemeral: true });
       return;
@@ -288,8 +284,7 @@ export class SettingsCommands {
     }
   }
   @Slash({ description: 'Disconnect the bot from voice channel' })
-  async disconnect(port_interaction: ChatInputCommandInteraction): Promise<void> {
-    const interaction = port_interaction;
+  async disconnect(interaction: CommandInteraction): Promise<void> {
     if (!interaction.guild) {
       await interaction.reply({ content: '❌ This command can only be used in servers!', ephemeral: true });
       return;
@@ -315,9 +310,8 @@ export class SettingsCommands {
     });
   }
   @Slash({ description: 'Show bot information and statistics' })
-  async info(port_interaction: ChatInputCommandInteraction): Promise<void> {
+  async info(interaction: CommandInteraction): Promise<void> {
     try {
-      const interaction = port_interaction;
       const client = interaction.client;
       const uptime = process.uptime();
       const uptimeString = this.formatUptime(uptime);
@@ -339,7 +333,6 @@ export class SettingsCommands {
         .setTimestamp();
       await interaction.reply({ embeds: [embed] });
     } catch (error) {
-      const interaction = port_interaction;
       logger.error('Error showing bot info', error as Error, 'commands');
       await interaction.reply({ 
         content: '❌ Failed to load bot information!', 
@@ -348,8 +341,7 @@ export class SettingsCommands {
     }
   }
   @Slash({ description: 'Test bot latency and connection' })
-  async ping(port_interaction: ChatInputCommandInteraction): Promise<void> {
-    const interaction = port_interaction;
+  async ping(interaction: CommandInteraction): Promise<void> {
     const start = Date.now();
     await interaction.deferReply();
     const apiLatency = Date.now() - start;
@@ -382,10 +374,8 @@ export class SettingsCommands {
     if (secs > 0) parts.push(`${secs}s`);
     return parts.join(' ') || '0s';
   }
-  private async validateGuildAndPermissions(port_interaction: ChatInputCommandInteraction): Promise<{ isValid: boolean; errorMessage?: string }> {
-    const interaction = port_interaction;
-    const Guildid = ApplicationCommandRegistries.setDefaultGuildIds(['1124284558448271482']);
-    if (!interaction.guild) {
+  private async validateGuildAndPermissions(interaction: CommandInteraction): Promise<{ isValid: boolean; errorMessage?: string }> {
+    if (!interaction.guild || !interaction.guild.id) {
       return { isValid: false, errorMessage: '❌ Interaction could not get a guild!' };
     }
     const member = interaction.guild?.members.cache.get(interaction.user.id);
@@ -397,5 +387,4 @@ export class SettingsCommands {
     }
     return { isValid: true };
   }
-
 }
