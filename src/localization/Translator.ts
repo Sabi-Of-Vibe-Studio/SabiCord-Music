@@ -6,6 +6,7 @@
 import { readFileSync, existsSync, readdirSync } from 'fs';
 import { join } from 'path';
 import { logger } from '../core/Logger';
+import { dirname } from "@discordx/importer";
 export interface ITranslationData {
   [key: string]: string | ITranslationData;
 }
@@ -27,7 +28,7 @@ export class Translator {
     return Translator.instance;
   }
   private loadTranslations(): void {
-    const langsPath = join(__dirname, 'langs');
+    const langsPath = join(dirname(import.meta.url), 'langs');
     if (!existsSync(langsPath)) {
       logger.warn('Languages directory not found, creating default translations', 'translator');
       this.createDefaultTranslations();

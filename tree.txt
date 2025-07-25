@@ -1,0 +1,27 @@
+// The file tree
+// ├───build
+// │   ├───audio
+// │   ├───commands
+//│   ├───core
+//│   ├───interfaces
+//│   ├───ipc
+//│   ├───localization
+//│   ├───services
+//│   └───views
+//├───lavalink
+//├───logs
+//├───src
+//│   ├───audio
+//│   ├───commands
+//│   ├───core
+//│   ├───interfaces
+//│   ├───ipc
+//│   ├───localization
+//│   │   └───langs
+//│   ├───services
+//│   ├───types
+//│   └───views
+//└───tests
+//    └───core
+//
+// Note all node_moudle already installed and very long in tree so we has remove them.
